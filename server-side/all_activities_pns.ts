@@ -1,8 +1,8 @@
 import { Client } from "@pepperi-addons/debug-server/dist"
 import { basename } from "path";
-import { DataIndexTypeInsert } from "./pnsUpdates/dataIndexType/dataIndexTypeInsert"
-import { DataIndexTypeUpdate } from "./pnsUpdates/dataIndexType/dataIndexTypeUpdate";
-import { baseReferenceTypePNSUpdate } from "./pnsUpdates/referenceType/baseReferenceTypePNSUpdate";
+import { DataIndexTypeInsert } from "./update_by_PNS/dataIndexType/dataIndexTypeInsert"
+import { DataIndexTypeUpdate } from "./update_by_PNS/dataIndexType/dataIndexTypeUpdate";
+import { baseReferenceTypePNSUpdate } from "./update_by_PNS/referenceType/baseReferenceTypePNSUpdate";
 
 const dataIndexType = "all_activities";
 

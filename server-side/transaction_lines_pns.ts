@@ -1,7 +1,7 @@
 import { Client } from "@pepperi-addons/debug-server/dist"
-import { DataIndexTypeInsert } from "./pnsUpdates/dataIndexType/dataIndexTypeInsert"
-import { DataIndexTypeUpdate } from "./pnsUpdates/dataIndexType/dataIndexTypeUpdate";
-import { baseReferenceTypePNSUpdate } from "./pnsUpdates/referenceType/baseReferenceTypePNSUpdate";
+import { DataIndexTypeInsert } from "./update_by_PNS/dataIndexType/dataIndexTypeInsert"
+import { DataIndexTypeUpdate } from "./update_by_PNS/dataIndexType/dataIndexTypeUpdate";
+import { baseReferenceTypePNSUpdate } from "./update_by_PNS/referenceType/baseReferenceTypePNSUpdate";
 
 const dataIndexType = "transaction_lines";
 export async function insert(client: Client, request: Request): Promise<any> {
