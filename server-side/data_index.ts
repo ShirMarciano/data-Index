@@ -3,7 +3,6 @@ import { AddonData, PapiClient } from '@pepperi-addons/papi-sdk'
 import { PNSSubscribeHelper } from "./PNSSubscribeHelper"
 import { CommonMethods } from "./CommonMethods"
 
-
 const adalTableName = "data_index";
 
 export async function rebuild(client: Client, request: Request): Promise<any> {
@@ -32,7 +31,7 @@ export async function rebuild(client: Client, request: Request): Promise<any> {
         var adalRecord = await papiClient.addons.data.uuid(client.AddonUUID).table(adalTableName).key(dataIndexType).get();
 
         //Unsubscribe old subscription and subscribe to new fields changes
-        await pnsHelper.HandleUnsubscribeAndSubscribeToPNS(adalRecord, fieldsToExport);
+        await pnsHelper.handleUnsubscribeAndSubscribeToPNS(adalRecord, fieldsToExport);
 
         //Run papi_rebuild
         var rebuildObject = await papiClient.post(`/bulk/data_index/rebuild/${dataIndexType}`,{FieldsToExport:fieldsToExport});

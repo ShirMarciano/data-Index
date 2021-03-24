@@ -16,7 +16,7 @@ export class PNSSubscribeHelper{
     }
 
 
-    async  HandleUnsubscribeAndSubscribeToPNS(adalRecord: any, fieldsToExport: string[]) {
+    async  handleUnsubscribeAndSubscribeToPNS(adalRecord: any, fieldsToExport: string[]) {
         var PNSSubscribeData = adalRecord["PNSSubscribeData"];
     
         await this.unsubscribePreviousSubscriptions(PNSSubscribeData); // from both IndexType and reference type old subscriptions
