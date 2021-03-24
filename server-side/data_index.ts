@@ -49,7 +49,8 @@ export async function rebuild(client: Client, request: Request): Promise<any> {
 
         resultObject.resultObject = rebuildObject;
     }
-    catch(e){
+    catch(e)
+    {
         resultObject.success = false;
         resultObject.erroeMessage = e.message;
     }
