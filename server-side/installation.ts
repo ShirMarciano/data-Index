@@ -16,7 +16,6 @@ export async function install(client: Client, request: Request): Promise<any> {
     var resultObject: {[k: string]: any} = {};
     resultObject.success=true;
     resultObject.resultObject={};
-
     try
     {
         var papiClient = new PapiClient({
@@ -31,7 +30,6 @@ export async function install(client: Client, request: Request): Promise<any> {
         //Create the relevant initial meta data in the data_index addon adal
         await createInitialDataIndexTableAdalSchemaAndData("data_index", papiClient, client);
         await createInitialDataIndexTableAdalSchemaAndData("data_index_ui", papiClient, client);
-
     }
     catch(e)
     {
