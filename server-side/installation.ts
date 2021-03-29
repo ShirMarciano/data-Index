@@ -50,7 +50,7 @@ async function createInitialDataIndexTableAdalSchemaAndData(tableName: string, p
     //create data_index-adal schema
     await papiClient.addons.data.schemes.post(body);
     papiClient.addons.data.uuid(client.AddonUUID).table(tableName).upsert({ Key: 'all_activities' });
-    papiClient.addons.data.uuid(client.AddonUUID).table("data_index").upsert({ Key: 'transaction_lines' });
+    papiClient.addons.data.uuid(client.AddonUUID).table(tableName).upsert({ Key: 'transaction_lines' });
 }
 
 export async function uninstall(client: Client, request: Request): Promise<any> {
