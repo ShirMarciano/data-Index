@@ -29,7 +29,7 @@ export class DataIndexsActions{
     
         try
         {
-            var UIAdalRecord = await this.papiClient.addons.data.uuid(this.client.AddonUUID).table(`${this.adalTableName}_UI`).key(this.dataIndexType).get();
+            var UIAdalRecord = await this.papiClient.addons.data.uuid(this.client.AddonUUID).table(`${this.adalTableName}_ui`).key(this.dataIndexType).get();
     
             fieldsToExport = UIAdalRecord["Fields"];
             console.log(`Start ${this.dataIndexType} rebuild function`);
