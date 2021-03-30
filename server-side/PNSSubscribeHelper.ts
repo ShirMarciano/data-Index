@@ -242,7 +242,7 @@ export class PNSSubscribeHelper{
             { //Reference on reference: e.g Transaction.Account.InternalID on transaction_lines, Agent.Profile.InternalID on all_activities
                 var referenceType = fieldParts[i - 1]; // if the field is Transaction.Account.InternalID - so it will be 'Account'
                 referenceObjectTypeName = fieldParts[i - 2]; // if the field is Transaction.Account.InternalID - so it will be 'Transaction' 
-                apiResources = this.getAPiResourcesByObjectTypeName(referenceObjectTypeName);
+                apiResources = CommonMethods.getAPiResourcesByObjectTypeName(referenceObjectTypeName);
                 fieldData = { FieldName: `${referenceType}WrntyID`, RefPrefix: fieldPrefix };
             }
         }
@@ -264,7 +264,7 @@ export class PNSSubscribeHelper{
                     { 
                         //e.g Account.Parent.Name so fieldParts[i - 2] will be 'Account'
                         referenceObjectTypeName = `${fieldParts[i - 2]}.Parent`; 
-                        apiResources = this.getAPiResourcesByObjectTypeName(referenceObjectTypeName);
+                        apiResources = CommonMethods.getAPiResourcesByObjectTypeName(referenceObjectTypeName);
                     }
                 }
                 else 
@@ -278,7 +278,7 @@ export class PNSSubscribeHelper{
             }
             else
             {//Transaction.Account.Name we ore on Name and referenceObjectTypeName (fieldParts[i - 1]) is 'Account'
-                apiResources = this.getAPiResourcesByObjectTypeName(referenceObjectTypeName);
+                apiResources = CommonMethods.getAPiResourcesByObjectTypeName(referenceObjectTypeName);
             }
         }
         this.insertReferenceFieldToSubscribeDataObj(apiResources, PNSSubscribeData, fieldPrefix, fieldData);
@@ -290,7 +290,7 @@ export class PNSSubscribeHelper{
         var fieldData;
         var prevType = fieldParts[i-1];
 
-        apiResources = this.getAPiResourcesByObjectTypeName(prevType);
+        apiResources = CommonMethods.getAPiResourcesByObjectTypeName(prevType);
 
         if (fieldParts[i].startsWith("TSA")) 
         {//e.g Transaction.TSARefAccount.Name - we are on the TSARefAccount part 
@@ -310,7 +310,7 @@ export class PNSSubscribeHelper{
                 }
                 else //e.g Transaction.Account.Parent.Name - we are on Parent part
                 {
-                    apiResources = this.getAPiResourcesByObjectTypeName(`${prevType}.Parent`);
+                    apiResources = CommonMethods.getAPiResourcesByObjectTypeName(`${prevType}.Parent`);
                 }
             }
 
@@ -388,49 +388,6 @@ export class PNSSubscribeHelper{
         }
     }
 
-    private getAPiResourcesByObjectTypeName(objectTypeName: string):string[] {
-
-        var APiResources:string[] = [];
-
-        switch (objectTypeName) {
-            case "Transaction":
-                APiResources= ["transactions"]
-                break;
-            case "Activity":
-                APiResources= ["activities"]
-                break;
-            case "Account":
-            case "AdditionalAccount":
-            case "OriginAccount":
-            case "Account.Parent":
-                APiResources= ["accounts"]
-                break;
-            case "Item":
-            case "Item.Parent":
-                APiResources= ["items"]
-                break;
-            case "Creator":
-            case "Agent":
-                APiResources= ["users","contacts"]
-                break;
-            case "ContactPerson":
-                APiResources= ["contacts"]
-                break;
-            case "Profile":
-                APiResources= ["profiles"]
-                break;
-            case "Role":
-                APiResources= ["roles"]
-                break;
-            case "Catalog":
-                APiResources= ["catalogs"]
-                break;
-            default: // to support caces where the 
-                APiResources = [objectTypeName]
-                break;
-        }
-        return APiResources;
-    }
 
     /* end getTypesSubscribedDataObject prinate methodes*/
 

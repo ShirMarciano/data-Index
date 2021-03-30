@@ -33,4 +33,49 @@ export  class CommonMethods{
             
         return fieldsToSubscribe;
     }
+
+
+    public static getAPiResourcesByObjectTypeName(objectTypeName: string):string[] {
+
+        var APiResources:string[] = [];
+
+        switch (objectTypeName) {
+            case "Transaction":
+                APiResources= ["transactions"]
+                break;
+            case "Activity":
+                APiResources= ["activities"]
+                break;
+            case "Account":
+            case "AdditionalAccount":
+            case "OriginAccount":
+            case "Account.Parent":
+                APiResources= ["accounts"]
+                break;
+            case "Item":
+            case "Item.Parent":
+                APiResources= ["items"]
+                break;
+            case "Creator":
+            case "Agent":
+                APiResources= ["users","contacts"]
+                break;
+            case "ContactPerson":
+                APiResources= ["contacts"]
+                break;
+            case "Profile":
+                APiResources= ["profiles"]
+                break;
+            case "Role":
+                APiResources= ["roles"]
+                break;
+            case "Catalog":
+                APiResources= ["catalogs"]
+                break;
+            default: // to support caces where the 
+                APiResources = [objectTypeName]
+                break;
+        }
+        return APiResources;
+    }
 }

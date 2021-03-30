@@ -6,6 +6,7 @@ import { BasePNSAction } from '../BasePNSAction';
 export class baseReferenceTypePNSUpdate extends BasePNSAction {
 
     referenceApiType: string;
+    
 
     constructor(inClient: Client, inDataIndexType: string, inPnsObject : any, inReferenceApiType: string) {
         super(inClient,inDataIndexType,inPnsObject);
@@ -25,7 +26,8 @@ export class baseReferenceTypePNSUpdate extends BasePNSAction {
                 var fieldsToExport : string[] = adalRecord["RebuildData"]["FieldsToExport"];
                 if(fieldsToExport)
                 {
-                    var referenceTypeData = adalRecord["PNSSubscribeData"]["ReferenceTypes"][this.referenceApiType];
+                    var referenceTypes = adalRecord["PNSSubscribeData"]["ReferenceTypes"];
+                    var referenceTypeData = referenceTypes[this.referenceApiType];
                     if(referenceTypeData)
                     {
                         var prefixesToApiFields  : any = {};
@@ -38,7 +40,7 @@ export class baseReferenceTypePNSUpdate extends BasePNSAction {
                         //collect UUIDs of PNS objects with at least one subscribed fields update
                         var UUIDs = this.collectUUIDsOfPNSObjects(subscribedFields);  
 
-                        this.createPrefixesToApiFieldsDictionary(referencePrefixesData, prefixesToApiFields, fieldsToGetFromAPI);
+                        this.createPrefixesToApiFieldsDictionary(referencePrefixesData, prefixesToApiFields, fieldsToGetFromAPI,referenceTypes);
 
                         //Get from the api all the rows objects by the relevant UUIDs
                         //an api call to the referenceApiType with all the needed api fields  + UUID + InternalID 
@@ -72,9 +74,9 @@ export class baseReferenceTypePNSUpdate extends BasePNSAction {
     }
 
     
-    private createPrefixesToApiFieldsDictionary(referencePrefixesData: any, prefixToApiFields: any, fieldsToGetFromAPI: string[]) {
+    private createPrefixesToApiFieldsDictionary(referencePrefixesData: any, prefixToApiFields: any, fieldsToGetFromAPI: string[],referenceTypes:any) {
         for (var prefix in referencePrefixesData) {
-            this.getPrefixToApiFields(referencePrefixesData, prefix, "", prefixToApiFields, fieldsToGetFromAPI);
+            this.getPrefixToApiFields(referencePrefixesData, prefix, "", prefixToApiFields, fieldsToGetFromAPI,referenceTypes);
         }
     }
 
@@ -122,28 +124,41 @@ export class baseReferenceTypePNSUpdate extends BasePNSAction {
     }
 
 
-    private getPrefixToApiFields(referencePrefixesData: any, prefix: string, refPrefix: string, prefixToApiFields: any, fieldsToGetFromAPI : string[] ) {
-        var prefixFields = referencePrefixesData[refPrefix ? refPrefix :prefix];
+    private getPrefixToApiFields(referencePrefixesData: any, prefix: string, refPrefix: string, prefixToApiFields: any, fieldsToGetFromAPI : string[] ,referenceTypes:any) {
+        var currPrefix = refPrefix ? refPrefix :prefix;
+        var prefixFields = referencePrefixesData[currPrefix];
 
-        prefixFields.forEach(field => 
+        if(!prefixFields)
+        {//get the fields from other resource type - e.g. the predix is Transaction.Agent.Profile 
+        //so need to get the fields of the Transaction.Agent.Profile prefix from the profiles recource
+            var parts = currPrefix.split(".");
+            var resource = CommonMethods.getAPiResourcesByObjectTypeName(parts[parts.length-1])[0];
+            prefixFields = referenceTypes[resource]["FieldsData"][currPrefix];
+        }
+
+        if(prefixFields)
         {
-            var fieldPrefix = refPrefix ? refPrefix.replace(`${prefix}.`,'') + "." : "";
-            var fieldName = field["FieldName"];
-
-            var fullFieldName: string = `${fieldPrefix}${fieldName}`;
-
-            if (!field["RefPrefix"]) 
-            {
-                this.InsertToPrefixesFieldDict(prefixToApiFields, prefix, fullFieldName,fieldsToGetFromAPI);
-            }
-            else 
-            {
-                fullFieldName = this.getReferenceFullFieldName(fullFieldName, fieldName);
-                this.InsertToPrefixesFieldDict(prefixToApiFields, prefix, fullFieldName,fieldsToGetFromAPI);
-                this.getPrefixToApiFields(referencePrefixesData, prefix,field["RefPrefix"], prefixToApiFields,fieldsToGetFromAPI);
-            }
-
-        });
+            prefixFields.forEach(field => 
+                {
+                    var fieldPrefix = refPrefix ? refPrefix.replace(`${prefix}.`,'') + "." : "";
+                    var fieldName = field["FieldName"];
+        
+                    var fullFieldName: string = `${fieldPrefix}${fieldName}`;
+        
+                    if (!field["RefPrefix"]) 
+                    {
+                        this.InsertToPrefixesFieldDict(prefixToApiFields, prefix, fullFieldName,fieldsToGetFromAPI);
+                    }
+                    else 
+                    {
+                        fullFieldName = this.getReferenceFullFieldName(fullFieldName, fieldName);
+                        this.InsertToPrefixesFieldDict(prefixToApiFields, prefix, fullFieldName,fieldsToGetFromAPI);
+                        this.getPrefixToApiFields(referencePrefixesData, prefix,field["RefPrefix"], prefixToApiFields,fieldsToGetFromAPI,referenceTypes);
+                    }
+        
+                });
+        }
+        
     }
 
     private getReferenceFullFieldName(fullFieldName: string, fieldName: string) 
