@@ -19,6 +19,8 @@ export class baseReferenceTypePNSUpdate extends BasePNSAction {
         resultObject.resultObject={};
         try
         {
+            var start = new Date().getTime();
+
             //Get the data index ADAL record
             var adalRecord = await this.papiClient.addons.data.uuid(this.client.AddonUUID).table("data_index").key(this.dataIndexType).get();
             var rebuildData = adalRecord["RebuildData"];
@@ -35,6 +37,8 @@ export class baseReferenceTypePNSUpdate extends BasePNSAction {
 
                         var referencePrefixesData = referenceTypeData["FieldsData"];
 
+                        var start1 = new Date().getTime();
+
                         var subscribedFields = CommonMethods.collectFieldsToSubscribeToOnTheApiResource(referencePrefixesData);
 
                         //collect UUIDs of PNS objects with at least one subscribed fields update
@@ -48,6 +52,9 @@ export class baseReferenceTypePNSUpdate extends BasePNSAction {
                         //var apiResults = await this.getDataFromApi(UUIDs,subscribedFields.concat(["InternalID","UUID"]),this.referenceApiType);
                         fieldsToGetFromAPI.push("InternalID", "UUID");
                         fieldsToGetFromAPI = fieldsToGetFromAPI.filter(CommonMethods.distinct);
+
+                        var end1 = new Date().getTime();
+                        console.log(`Update data Index ${this.dataIndexType} ref type '${this.referenceApiType}' Preparations (collectFieldsToSubscribeTo,collect UUIDs, create prefixes to api dict) took ${end1 - start1} ms`);
 
                         var apiResults = await this.getDataFromApi(UUIDs,fieldsToGetFromAPI.filter(CommonMethods.distinct),this.referenceApiType);
 
@@ -63,6 +70,10 @@ export class baseReferenceTypePNSUpdate extends BasePNSAction {
                     }
                 }
             }
+
+            var end = new Date().getTime();
+            console.log(`Update data Index ${this.dataIndexType} reference '${this.referenceApiType}' rows took in total ${end - start} ms`);
+
         }
         catch(e)
         {

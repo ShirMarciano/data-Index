@@ -14,8 +14,9 @@ export abstract class BaseDataIndexTypePNSAction extends BasePNSAction {
         resultObject.success=true;
         resultObject.resultObject={};
         try{
-
-        //Get the data index ADAL record
+            
+            var start = new Date().getTime();
+            //Get the data index ADAL record
             var adalRecord = await this.papiClient.addons.data.uuid(this.client.AddonUUID).table("data_index").key(this.dataIndexType).get();
             var rebuildData = adalRecord["RebuildData"];
             if(rebuildData){
@@ -54,10 +55,13 @@ export abstract class BaseDataIndexTypePNSAction extends BasePNSAction {
                     await this.deleteHiddenRowsFromTheDataIndex(UUIDsToDelete);
                     await this.uploadRowsToDataIndex(rowsToUpload);
 
+                    var end = new Date().getTime();
+
                     resultObject.resultObject = {
                         DeletedRowsCount:UUIDsToDelete.length,
                         UploadedRowsCount:rowsToUpload.length
                     }
+                    console.log(`Update data Index ${this.dataIndexType} took in total ${end - start} ms, ${JSON.stringify(resultObject.resultObject)}`);
 
                 }
             }

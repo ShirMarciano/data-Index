@@ -45,6 +45,8 @@ export abstract class BasePNSAction {
 
     public async getDataFromApi(UUIDs: string[], fields: string[], apiResuorce : string) {
 
+        var start = new Date().getTime();
+
         var body = {
             fields: fields.join(',') + ",Hidden",
             UUIDList: UUIDs,
@@ -52,6 +54,10 @@ export abstract class BasePNSAction {
         };
 
         var res = await this.papiClient.post(`/${apiResuorce}/search`, body);
+
+        var end = new Date().getTime();
+         console.log(`Update data Index - get data from ${apiResuorce} api rows took ${end - start} ms`);
+
         return res;
     }
     
