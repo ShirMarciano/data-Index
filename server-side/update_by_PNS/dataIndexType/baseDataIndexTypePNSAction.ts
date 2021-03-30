@@ -53,9 +53,11 @@ export abstract class BaseDataIndexTypePNSAction extends BasePNSAction {
                     });
 
                     await this.deleteHiddenRowsFromTheDataIndex(UUIDsToDelete);
+
                     await this.uploadRowsToDataIndex(rowsToUpload);
 
                     var end = new Date().getTime();
+
 
                     resultObject.resultObject = {
                         DeletedRowsCount:UUIDsToDelete.length,
@@ -77,9 +79,17 @@ export abstract class BaseDataIndexTypePNSAction extends BasePNSAction {
     
 
     private async uploadRowsToDataIndex(rowsToUpload: any[]) {
+        
+        var start = new Date().getTime();
+
         if (rowsToUpload.length > 0) {
             await this.upload(rowsToUpload);
         }
+        var end = new Date().getTime();
+
+        console.log(`Update data Index ${this.dataIndexType} - upload ${rowsToUpload.length} rows to elasticsearch took ${end - start} ms`);
+
+
     }
 
      async upload(rowsToUpload: any[]) {
@@ -109,6 +119,9 @@ export abstract class BaseDataIndexTypePNSAction extends BasePNSAction {
 
 
     async deleteHiddenRowsFromTheDataIndex(UUIDsToDelete: string[]) {
+
+        var start = new Date().getTime();
+
         if (UUIDsToDelete.length > 0) {
             var deleteBody = {
                 query: {
@@ -123,6 +136,10 @@ export abstract class BaseDataIndexTypePNSAction extends BasePNSAction {
             };
 
             var res = await this.papiClient.post(`/elasticsearch/delete/${this.dataIndexType}`, deleteBody);
+
+            var end = new Date().getTime();
+    
+            console.log(`Update data Index ${this.dataIndexType} - delete ${UUIDsToDelete.length} rows from elasticsearch took ${end - start} ms`);
 
         }
     }

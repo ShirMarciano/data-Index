@@ -58,6 +58,8 @@ export class baseReferenceTypePNSUpdate extends BasePNSAction {
 
                         var apiResults = await this.getDataFromApi(UUIDs,fieldsToGetFromAPI.filter(CommonMethods.distinct),this.referenceApiType);
 
+                        var start2 = new Date().getTime();
+
                         for (var i=0;i < apiResults.length;i++) {
                             var apiObj = apiResults[0];
                             //loop on the referene obj rows to update the elastic
@@ -67,6 +69,10 @@ export class baseReferenceTypePNSUpdate extends BasePNSAction {
                             }
 
                         }
+
+                        var end2 = new Date().getTime();
+                        console.log(`Update data Index ${this.dataIndexType}- update by query all reference '${this.referenceApiType}' rows took in total ${end2 - start2} ms`);
+
                     }
                 }
             }
