@@ -61,7 +61,7 @@ export class baseReferenceTypePNSUpdate extends BasePNSAction {
                         var start2 = new Date().getTime();
 
                         for (var i=0;i < apiResults.length;i++) {
-                            var apiObj = apiResults[0];
+                            var apiObj = apiResults[i];
                             //loop on the referene obj rows to update the elastic
                             for(var prefix in referencePrefixesData)
                             {
