@@ -41,3 +41,11 @@ export async function catalogs_update(client: Client, request: Request): Promise
 export async function items_update(client: Client, request: Request): Promise<any> {
     return await new baseReferenceTypePNSUpdate(client, dataIndexType, request.body,"items").execute();
 }
+
+export async function transactions_update(client: Client, request: Request): Promise<any> {
+    return await new baseReferenceTypePNSUpdate(client, dataIndexType, request.body,"transactions").execute();
+}
+
+export async function activities_update(client: Client, request: Request): Promise<any> {
+    return await new baseReferenceTypePNSUpdate(client, dataIndexType, request.body,"activities").execute();
+}
