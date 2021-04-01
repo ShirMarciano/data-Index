@@ -44,14 +44,13 @@ export class baseReferenceTypePNSUpdate extends BasePNSAction {
                         //collect UUIDs of PNS objects with at least one subscribed fields update
                         var UUIDs = this.collectUUIDsOfPNSObjects(subscribedFields);  
 
-                        this.createPrefixesToApiFieldsDictionary(referencePrefixesData, prefixesToApiFields, fieldsToGetFromAPI,referenceTypes);
+                        this.createPrefixesToApiFieldsDictionary(referencePrefixesData, prefixesToApiFields,referenceTypes);
 
                         //Get from the api all the rows objects by the relevant UUIDs
                         //an api call to the referenceApiType with all the needed api fields  + UUID + InternalID 
                         //(InternalID because it is reference fields and we have the internalID of the reference exported so we will get the rows by the internalID)  
                         //var apiResults = await this.getDataFromApi(UUIDs,subscribedFields.concat(["InternalID","UUID"]),this.referenceApiType);
-                        fieldsToGetFromAPI.push("InternalID", "UUID");
-                        fieldsToGetFromAPI = fieldsToGetFromAPI.filter(CommonMethods.distinct);
+                        fieldsToGetFromAPI = this.collectFieldsToGetFromTheAPI(prefixesToApiFields, fieldsToGetFromAPI);
 
                         var end1 = new Date().getTime();
                         console.log(`Update data Index ${this.dataIndexType} ref type '${this.referenceApiType}' Preparations (collectFieldsToSubscribeTo,collect UUIDs, create prefixes to api dict) took ${end1 - start1} ms`);
@@ -91,9 +90,20 @@ export class baseReferenceTypePNSUpdate extends BasePNSAction {
     }
 
     
-    private createPrefixesToApiFieldsDictionary(referencePrefixesData: any, prefixToApiFields: any, fieldsToGetFromAPI: string[],referenceTypes:any) {
+    private collectFieldsToGetFromTheAPI(prefixesToApiFields: any, fieldsToGetFromAPI: string[]) 
+    {
+        for(var prefix in prefixesToApiFields) 
+        {
+            fieldsToGetFromAPI = fieldsToGetFromAPI.concat(prefixesToApiFields[prefix]);
+        }
+        fieldsToGetFromAPI.push("InternalID", "UUID");
+        fieldsToGetFromAPI = fieldsToGetFromAPI.filter(CommonMethods.distinct);
+        return fieldsToGetFromAPI;
+    }
+
+    private createPrefixesToApiFieldsDictionary(referencePrefixesData: any, prefixToApiFields: any,referenceTypes:any) {
         for (var prefix in referencePrefixesData) {
-            this.getPrefixToApiFields(referencePrefixesData, prefix, "", prefixToApiFields, fieldsToGetFromAPI,referenceTypes);
+            this.getPrefixToApiFields(referencePrefixesData, prefix, "","", prefixToApiFields,referenceTypes);
         }
     }
 
@@ -141,16 +151,17 @@ export class baseReferenceTypePNSUpdate extends BasePNSAction {
     }
 
 
-    private getPrefixToApiFields(referencePrefixesData: any, prefix: string, refPrefix: string, prefixToApiFields: any, fieldsToGetFromAPI : string[] ,referenceTypes:any) {
-        var currPrefix = refPrefix ? refPrefix :prefix;
-        var prefixFields = referencePrefixesData[currPrefix];
-
-        if(!prefixFields)
-        {//get the fields from other resource type - e.g. the predix is Transaction.Agent.Profile 
+    private getPrefixToApiFields(referencePrefixesData: any, prefix: string, refPrefix: string, refRecource:string, prefixToApiFields: any,referenceTypes:any) 
+    {
+        if(refPrefix)
+        {//get the fields from other resource type - e.g. the prefix is Transaction.Agent.Profile 
         //so need to get the fields of the Transaction.Agent.Profile prefix from the profiles recource
-            var parts = currPrefix.split(".");
-            var resource = CommonMethods.getAPiResourcesByObjectTypeName(parts[parts.length-1])[0];
-            prefixFields = referenceTypes[resource]["FieldsData"][currPrefix];
+            prefixFields = referenceTypes[refRecource]["FieldsData"][refPrefix];
+        }
+        else
+        {
+            var prefixFields = referencePrefixesData[prefix];
+
         }
 
         if(prefixFields)
@@ -164,13 +175,13 @@ export class baseReferenceTypePNSUpdate extends BasePNSAction {
         
                     if (!field["RefPrefix"]) 
                     {
-                        this.InsertToPrefixesFieldDict(prefixToApiFields, prefix, fullFieldName,fieldsToGetFromAPI);
+                        this.InsertToPrefixesFieldDict(prefixToApiFields, prefix, fullFieldName);
                     }
                     else 
                     {
                         fullFieldName = this.getReferenceFullFieldName(fullFieldName, fieldName);
-                        this.InsertToPrefixesFieldDict(prefixToApiFields, prefix, fullFieldName,fieldsToGetFromAPI);
-                        this.getPrefixToApiFields(referencePrefixesData, prefix,field["RefPrefix"], prefixToApiFields,fieldsToGetFromAPI,referenceTypes);
+                        this.InsertToPrefixesFieldDict(prefixToApiFields, prefix, fullFieldName);
+                        this.getPrefixToApiFields(referencePrefixesData, prefix,field["RefPrefix"],field["RefResource"], prefixToApiFields,referenceTypes);
                     }
         
                 });
@@ -196,7 +207,7 @@ export class baseReferenceTypePNSUpdate extends BasePNSAction {
         return fullFieldName;
     }
 
-    private InsertToPrefixesFieldDict(prefixToApiFields:any, prefix:string, fieldName:string, fieldsToGetFromAPI:string[]) {
+    private InsertToPrefixesFieldDict(prefixToApiFields:any, prefix:string, fieldName:string) {
         if (prefixToApiFields[prefix]) {
             prefixToApiFields[prefix].push(fieldName);
         }
@@ -204,8 +215,6 @@ export class baseReferenceTypePNSUpdate extends BasePNSAction {
             prefixToApiFields[prefix] = [fieldName];
 
         }
-
-        fieldsToGetFromAPI.push(fieldName);
     }
 
     public collectUUIDsOfObjectsWithAtLeastOneSubscribedFieldsUpdate(subscribedFields: string[], UUIDs: string[]) {

@@ -54,7 +54,6 @@ export class PNSSubscribeHelper{
                 FilterPolicy: {
                         Resource: this.dataIndexType == "all_activities"? ["actvities","transactions"] : [this.dataIndexType],
                         Type:["data"],
-                        UpdatedFields:indexTypeSubscribeData["Fields"],
                         ActionType:["insert"]
                 },
                 AddonPath:subscribeDetails["Insert"]["AddonPath"],
@@ -65,6 +64,7 @@ export class PNSSubscribeHelper{
 
             //subscribe for update of index type data
             body.FilterPolicy.ActionType = ["update"];
+            body.FilterPolicy["UpdatedFields"] = indexTypeSubscribeData["Fields"];
             body.AddonPath=subscribeDetails["Update"]["AddonPath"],
             body.FunctionName=subscribeDetails["Update"]["FunctionName"]
 
@@ -241,9 +241,10 @@ export class PNSSubscribeHelper{
             else 
             { //Reference on reference: e.g Transaction.Account.InternalID on transaction_lines, Agent.Profile.InternalID on all_activities
                 var referenceType = fieldParts[i - 1]; // if the field is Transaction.Account.InternalID - so it will be 'Account'
+                var refResources = CommonMethods.getAPiResourcesByObjectTypeName(referenceType)
                 referenceObjectTypeName = fieldParts[i - 2]; // if the field is Transaction.Account.InternalID - so it will be 'Transaction' 
                 apiResources = CommonMethods.getAPiResourcesByObjectTypeName(referenceObjectTypeName);
-                fieldData = { FieldName: `${referenceType}WrntyID`, RefPrefix: fieldPrefix };
+                fieldData = { FieldName: `${referenceType}WrntyID`, RefPrefix: fieldPrefix, RefResources: refResources} ;
             }
         }
         else 
@@ -287,6 +288,7 @@ export class PNSSubscribeHelper{
     private handleNextLevelReferenceField(fieldParts: string[], i: number, fieldPrefix: string, PNSSubscribeData: any) {
         //Next level it means that we are in second (or above) reference level that it is not the end fiels, e.g Transaction.Account.Name we are on Account part
         var apiResources: string[] = [];
+        var refResource: string;
         var fieldData;
         var prevType = fieldParts[i-1];
 
@@ -296,12 +298,15 @@ export class PNSSubscribeHelper{
         {//e.g Transaction.TSARefAccount.Name - we are on the TSARefAccount part 
         // in case of TSA referencee we need to subscribe to the TSA itself and not the InternalID 
         //because the TSA ref value is Guid and we will get update event on the Guid
-            fieldData = {FieldName: fieldParts[i], RefPrefix: `${fieldPrefix}.${fieldParts[i]}`};
+            var TSAName = fieldParts[i];
+            refResource = this.tsaRefToApiResource[TSAName];
+            fieldData = {FieldName: fieldParts[i], RefPrefix: `${fieldPrefix}.${TSAName}`, RefResource: refResource};
+
         }
         else //need to subscribe to the change of the reference io the prev object - to the InternalID of the reference on the prev reference level obj
         {
             var referenceTypeName = fieldParts[i];
-
+            refResource = CommonMethods.getAPiResourcesByObjectTypeName(referenceTypeName)[0]//the only ObjectTypeName with more then 1 resource is Agent/Creator fields - we return [users,contacts] because we need to subscribe both recources, but the fields will be the same;
             if (referenceTypeName == "Parent") 
             { 
                 if (prevType.startsWith("TSA")) 
@@ -312,9 +317,11 @@ export class PNSSubscribeHelper{
                 {
                     apiResources = CommonMethods.getAPiResourcesByObjectTypeName(`${prevType}.Parent`);
                 }
+
+                refResource = apiResources[0];//parent is always from the same recource
             }
 
-            fieldData = { FieldName: `${referenceTypeName}WrntyID`, RefPrefix: `${fieldPrefix}.${referenceTypeName}` };
+            fieldData = { FieldName: `${referenceTypeName}WrntyID`, RefPrefix: `${fieldPrefix}.${referenceTypeName}`, RefResource: refResource };
         }
         this.insertReferenceFieldToSubscribeDataObj(apiResources, PNSSubscribeData, fieldPrefix, fieldData);
     }
