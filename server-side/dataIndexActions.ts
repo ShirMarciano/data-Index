@@ -144,10 +144,10 @@ export class DataIndexsActions{
      private addDefaultFieldsByType(fieldsToExport: string[]) {
         switch (this.dataIndexType) {
             case "all_activities":
-                fieldsToExport.push("InternalID","UUID", "ActivityTypeID","Type", "Status", "ActionDateTime", "Account.ExternalID");
+                fieldsToExport.push("InternalID","UUID", "ActivityTypeID", "Status", "ActionDateTime", "Account.ExternalID");
                 break;
             case "transaction_lines":
-                fieldsToExport.push("InternalID","UUID","Item.ExternalID", "Transaction.Type", "Transaction.Status", "Transaction.ActionDateTime", "Transaction.Account.ExternalID");
+                fieldsToExport.push("InternalID","UUID","Item.ExternalID", "Transaction.Status", "Transaction.ActionDateTime", "Transaction.Account.ExternalID");
                 break;
         }
     }
