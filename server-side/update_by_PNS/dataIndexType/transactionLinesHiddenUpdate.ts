@@ -1,8 +1,14 @@
 
+import { Client } from '@pepperi-addons/debug-server/dist';
 import { DataIndexTypeHiddenUpdate } from './dataIndexTypeHiddenUpdate';
 
 export class TransactionLinesHiddenUpdate extends DataIndexTypeHiddenUpdate {
 
+    constructor(inClient: Client ,inPnsObject : any) {
+        super(inClient,"transaction_lines",inPnsObject)
+    }    
+    
+    
     async handleHiddenRows(hiddenRows: any[]):Promise<any>
     {
         //delete hidden transaction lines from the data index

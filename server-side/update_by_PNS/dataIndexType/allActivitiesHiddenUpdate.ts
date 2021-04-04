@@ -1,7 +1,13 @@
 
+import { Client } from '@pepperi-addons/debug-server/dist';
 import { DataIndexTypeHiddenUpdate } from './dataIndexTypeHiddenUpdate';
 
 export  class AllActivitiesHiddenUpdate extends DataIndexTypeHiddenUpdate {
+
+
+    constructor(inClient: Client ,inPnsObject : any) {
+        super(inClient,"all_activities",inPnsObject)
+    }  
 
     async handleHiddenRows(hiddenRows: any[]):Promise<any>
     {
@@ -17,8 +23,8 @@ export  class AllActivitiesHiddenUpdate extends DataIndexTypeHiddenUpdate {
             await this.deleteHiddenRowsFromTheDataIndex(tlRowsToDelete.map(r=>r["UUID"]),"transaction_lines");
 
             res =  {
-                "deletedActivitiesCount":hiddenRows.length,
-                "deletedTransactionLinesCount":tlRowsToDelete.length
+                "DeletedActivitiesCount":hiddenRows.length,
+                "DeletedTransactionLinesCount":tlRowsToDelete.length
             };
         }
 
@@ -47,7 +53,7 @@ export  class AllActivitiesHiddenUpdate extends DataIndexTypeHiddenUpdate {
                 var tlFieldsToExport = tlAdalRecord["RebuildData"]["FieldsToExport"];        
                 if(tlFieldsToExport)
                 {
-                    //get from API the transaction lines by the tranasaction internalID (not uuid becuyse we have a partition on Transaction.InternalID)
+                    //get from API the transaction lines by the tranasaction internalID (not uuid because we have a partition on Transaction.InternalID)
                     var tlRowsToUpload = await this.papiClient.get(`/transaction_lines?where=Transaction.InternalID in (${InternalIDsStr})&fields=${tlFieldsToExport.join(",")}`);
                     await this.uploadRowsToDataIndex(tlRowsToUpload,"transaction_lines");
                 }

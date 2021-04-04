@@ -14,7 +14,7 @@ export async function update(client: Client, request: Request): Promise<any> {
 }
 
 export async function hidden_update(client: Client, request: Request): Promise<any> {
-    return await new TransactionLinesHiddenUpdate(client, dataIndexType, request.body).execute();
+    return await new TransactionLinesHiddenUpdate(client, request.body).execute();
 }
 
 export async function transactions_update(client: Client, request: Request): Promise<any> {

@@ -15,7 +15,7 @@ export async function update(client: Client, request: Request): Promise<any> {
 }
 
 export async function hidden_update(client: Client, request: Request): Promise<any> {
-    return await new AllActivitiesHiddenUpdate(client, dataIndexType, request.body).execute();
+    return await new AllActivitiesHiddenUpdate(client, request.body).execute();
 }
 
 export async function accounts_update(client: Client, request: Request): Promise<any> {
