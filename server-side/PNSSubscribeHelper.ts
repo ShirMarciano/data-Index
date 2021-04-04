@@ -129,14 +129,25 @@ export class PNSSubscribeHelper{
 
     private async unsubscribeIndexType(indexTypeSubscribeData: any) {
         if(indexTypeSubscribeData){
+
             var headers = {
                 "X-Pepperi-SecretKey": this.client.AddonSecretKey,
                 "X-Pepperi-OwnerID": this.client.AddonUUID
             };
             var subscribeDetails = indexTypeSubscribeData["SubscribeDetails"];
             var unSubscribeURL = "/notifications/unsubscriptions";
-            await this.papiClient.post(unSubscribeURL, subscribeDetails["Insert"], headers);
-            await this.papiClient.post(unSubscribeURL, subscribeDetails["Update"], headers);
+            try{
+
+                for(var subscription in subscribeDetails){
+                    await this.papiClient.post(unSubscribeURL, subscribeDetails[subscription], headers);
+                }
+
+            }
+            catch(e)
+            {
+                console.log(`Error in unsubscribeIndexType: ${JSON.stringify(e)}`)
+            }
+           
             
         }
     } 
