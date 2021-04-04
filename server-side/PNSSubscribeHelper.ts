@@ -62,13 +62,24 @@ export class PNSSubscribeHelper{
             }
             await this.papiClient.post(subscribeURL, body, headers);
 
-            //subscribe for update of index type data
+            //subscribe for updates 
             body.FilterPolicy.ActionType = ["update"];
+
+            //updates of Hidden fields
+            body.FilterPolicy["UpdatedFields"] = ["Hidden"];
+            body.AddonPath = subscribeDetails["Hidden_Update"]["AddonPath"],
+            body.FunctionName = subscribeDetails["Hidden_Update"]["FunctionName"]
+            
+            await this.papiClient.post(subscribeURL, body, headers);
+
+            //update of index type data fields
             body.FilterPolicy["UpdatedFields"] = indexTypeSubscribeData["Fields"];
-            body.AddonPath=subscribeDetails["Update"]["AddonPath"],
-            body.FunctionName=subscribeDetails["Update"]["FunctionName"]
+            body.AddonPath = subscribeDetails["Update"]["AddonPath"],
+            body.FunctionName = subscribeDetails["Update"]["FunctionName"]
 
             await this.papiClient.post(subscribeURL, body, headers);
+
+            
         }
     }
 
@@ -164,6 +175,10 @@ export class PNSSubscribeHelper{
                     Update:{
                         AddonPath:`${this.dataIndexType}_pns`,
                         FunctionName:"update"
+                    },
+                    Hidden_Update:{
+                        AddonPath:`${this.dataIndexType}_pns`,
+                        FunctionName:"hidden_update"
                     }
                 
                 } 
@@ -174,11 +189,12 @@ export class PNSSubscribeHelper{
         for (var i=0;i < fieldstoExport.length; i++)
         {
             var field = fieldstoExport[i];
+
             if(field.includes("."))//reference field
             {
                 this.handleReferenceField(field, PNSSubscribeData);
             }
-            else // field on the index type itself
+            else if (field != "Hidden") // field on the index type itself, 'Hidden' will be managed separatly also if we didn't export it
             {
                 PNSSubscribeData.IndexType.Fields.push(field);
             }

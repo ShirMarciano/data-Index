@@ -1,6 +1,7 @@
 import { Client } from "@pepperi-addons/debug-server/dist"
 import { DataIndexTypeInsert } from "./update_by_PNS/dataIndexType/dataIndexTypeInsert"
 import { DataIndexTypeUpdate } from "./update_by_PNS/dataIndexType/dataIndexTypeUpdate";
+import { TransactionLinesHiddenUpdate } from "./update_by_PNS/dataIndexType/transactionLinesHiddenUpdate";
 import { baseReferenceTypePNSUpdate } from "./update_by_PNS/referenceType/baseReferenceTypePNSUpdate";
 
 const dataIndexType = "transaction_lines";
@@ -10,6 +11,10 @@ export async function insert(client: Client, request: Request): Promise<any> {
 
 export async function update(client: Client, request: Request): Promise<any> {
     return await new DataIndexTypeUpdate(client, dataIndexType, request.body).execute();
+}
+
+export async function hidden_update(client: Client, request: Request): Promise<any> {
+    return await new TransactionLinesHiddenUpdate(client, dataIndexType, request.body).execute();
 }
 
 export async function transactions_update(client: Client, request: Request): Promise<any> {

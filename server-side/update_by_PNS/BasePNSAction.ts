@@ -60,5 +60,89 @@ export abstract class BasePNSAction {
 
         return res;
     }
+
+    getRowsToUploadFromApiResult(fieldsToExport: string[], apiResult: any) {
+        var rowsToUpload: any[] = [];
+
+        var hiddenFieldExported = fieldsToExport.includes("Hidden");
+
+        apiResult.forEach(apiObject => {
+            if (apiObject["Hidden"] != true) { //object to upload to elastic
+
+                if (!hiddenFieldExported) { //remove the hidden field if it not needed to be exported
+                    delete apiObject["Hidden"];
+                }
+                rowsToUpload.push(apiObject);
+            }
+        });
+        return rowsToUpload;
+    }
+
+
+    async uploadRowsToDataIndex(rowsToUpload: any[], dataIndexType:string) {
+        
+        var start = new Date().getTime();
+
+        if (rowsToUpload.length > 0) {
+            await this.upload(rowsToUpload, dataIndexType);
+        }
+        var end = new Date().getTime();
+
+        console.log(`Update data Index ${dataIndexType} - upload ${rowsToUpload.length} rows to elasticsearch took ${end - start} ms`);
+
+
+    }
+
+     private async upload(rowsToUpload: any[],dataIndexType:string) {
+        var fileStorage = await this.papiClient.fileStorage.tmp();
+
+        //upload to the url
+        await fetch(fileStorage.UploadURL, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json',"Cache-Control": "no-cache" },
+            body: JSON.stringify(rowsToUpload),
+        })
+
+        var chunkSize = 5000;
+        var start = 0;
+        var totalRowsCount = rowsToUpload.length;
+
+        while (start < totalRowsCount) {
+
+            var rows = rowsToUpload.slice(start, start + chunkSize);
+
+            var res = await this.papiClient.post(`/elasticsearch/bulk/${dataIndexType}`, { URL: fileStorage.DownloadURL });
+
+            start += rows.length;
+
+        }
+    }
+
+
+    async deleteHiddenRowsFromTheDataIndex(UUIDsToDelete: string[],dataIndexType: string) {
+
+        var start = new Date().getTime();
+
+        if (UUIDsToDelete.length > 0) {
+            var deleteBody = {
+                query: {
+                    bool: {
+                        must: {
+                            terms: {
+                                UUID: UUIDsToDelete
+                            }
+                        }
+                    }
+                }
+            };
+
+            var res = await this.papiClient.post(`/elasticsearch/delete/${dataIndexType}`, deleteBody);
+
+            var end = new Date().getTime();
+    
+            console.log(`Update data Index ${dataIndexType} - delete ${UUIDsToDelete.length} rows from elasticsearch took ${end - start} ms`);
+
+        }
+    }
     
 }
