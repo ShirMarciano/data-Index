@@ -193,9 +193,9 @@ export class baseReferenceTypePNSUpdate extends BasePNSAction {
     {
         if (!fullFieldName.endsWith(".InternalID")) 
         {
-            if (fullFieldName.endsWith("WrntyID")) 
+            if (fullFieldName.endsWith("InternalID")) 
             { //e.g AccountInternalID
-                var parts = fullFieldName.split("WrntyID");
+                var parts = fullFieldName.split("InternalID");
                 fullFieldName = `${parts[0]}.InternalID`; // e.g make it Account.InternalID
             }
             else if (fieldName.startsWith("TSA")) 

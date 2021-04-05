@@ -249,7 +249,7 @@ export class PNSSubscribeHelper{
         }
         else 
         { //ReferenceOnTheIndexType - e.g Transaction.InternalID/Item.InternalID on transaction_lines, Account.InternalID on all_activities
-            PNSSubscribeData["IndexType"]["Fields"].push(`${fieldParts[0]}WrntyID`);
+            PNSSubscribeData["IndexType"]["Fields"].push(`${fieldParts[0]}InternalID`);
         }
     }
 
@@ -263,7 +263,7 @@ export class PNSSubscribeHelper{
         {
             if (i == 1)
             {//Reference on the dataIndexType - e.g Transaction.InternalID/Item.InternalID on transaction_lines, Account.InternalID on all_activities
-                PNSSubscribeData["IndexType"]["Fields"].push(`${fieldParts[0]}WrntyID`);
+                PNSSubscribeData["IndexType"]["Fields"].push(`${fieldParts[0]}InternalID`);
             }
             else 
             { //Reference on reference: e.g Transaction.Account.InternalID on transaction_lines, Agent.Profile.InternalID on all_activities
@@ -271,7 +271,7 @@ export class PNSSubscribeHelper{
                 var refResources = CommonMethods.getAPiResourcesByObjectTypeName(referenceType)
                 referenceObjectTypeName = fieldParts[i - 2]; // if the field is Transaction.Account.InternalID - so it will be 'Transaction' 
                 apiResources = CommonMethods.getAPiResourcesByObjectTypeName(referenceObjectTypeName);
-                fieldData = { FieldName: `${referenceType}WrntyID`, RefPrefix: fieldPrefix, RefResources: refResources} ;
+                fieldData = { FieldName: `${referenceType}InternalID`, RefPrefix: fieldPrefix, RefResources: refResources} ;
             }
         }
         else 
@@ -348,7 +348,7 @@ export class PNSSubscribeHelper{
                 refResource = apiResources[0];//parent is always from the same recource
             }
 
-            fieldData = { FieldName: `${referenceTypeName}WrntyID`, RefPrefix: `${fieldPrefix}.${referenceTypeName}`, RefResource: refResource };
+            fieldData = { FieldName: `${referenceTypeName}InternalID`, RefPrefix: `${fieldPrefix}.${referenceTypeName}`, RefResource: refResource };
         }
         this.insertReferenceFieldToSubscribeDataObj(apiResources, PNSSubscribeData, fieldPrefix, fieldData);
     }
