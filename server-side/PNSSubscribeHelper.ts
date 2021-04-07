@@ -34,9 +34,9 @@ export class PNSSubscribeHelper{
 
     /* Subscribe and unsubscibe private methods*/ 
 
-    private async subscribeToPNS(PNSSubscribeData: any) {
+    private async subscribeToPNS(PNSSubscribeData: any) 
+    {
         await this.subscribeIndexType(PNSSubscribeData["IndexType"]);
-
         await this.subscribeReferenceTypes(PNSSubscribeData["ReferenceTypes"]);
     }
 
@@ -79,7 +79,6 @@ export class PNSSubscribeHelper{
 
             await this.papiClient.post(subscribeURL, body, headers);
 
-            
         }
     }
 

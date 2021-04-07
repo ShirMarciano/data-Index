@@ -4,7 +4,7 @@ import { CommonMethods } from "./CommonMethods";
 import { PNSSubscribeHelper } from "./PNSSubscribeHelper"
 
 
-export class DataIndexsActions{
+export  class DataIndexActions{
 
     client: Client;
     papiClient: PapiClient;
@@ -18,6 +18,7 @@ export class DataIndexsActions{
         this.dataIndexType = inDataIndexType;
     }
 
+
     public async rebuild(): Promise<any> {
     
         var resultObject: {[k: string]: any} = {};
@@ -29,9 +30,9 @@ export class DataIndexsActions{
     
         try
         {
-            var UIAdalRecord = await this.papiClient.addons.data.uuid(this.client.AddonUUID).table(`${this.adalTableName}_ui`).key(this.dataIndexType).get();
+            var UIAdalRecord = await this.papiClient.addons.data.uuid(this.client.AddonUUID).table(`${this.adalTableName}_ui`).key("meta_data").get();
     
-            fieldsToExport = UIAdalRecord["Fields"];
+            fieldsToExport = UIAdalRecord[`${this.dataIndexType}_fields`];
             console.log(`Start ${this.dataIndexType} rebuild function`);
     
             //Add defaultFields to fieldToExport
@@ -69,6 +70,16 @@ export class DataIndexsActions{
         return resultObject
     }
 
+    async handleRebuildEndStatus(rebuildData:any)
+    {
+        console.log(`Data Index ${this.dataIndexType} rebuild ended with status ${rebuildData["Status"]}`)
+    }
+
+    async getPollingResults(rebuildData:any) : Promise<any>
+    {
+        return rebuildData;
+    }
+
     public async polling(): Promise<any> {
     
         var resultObject: {[k: string]: any} = {};
@@ -77,22 +88,26 @@ export class DataIndexsActions{
         try
         {
             //Run papi_rebuild_Poling
-            var rebuildObject = await this.papiClient.post(`/bulk/data_index/rebuild/polling/${this.dataIndexType}`);
+            var rebuildData = await this.papiClient.post(`/bulk/data_index/rebuild/polling/${this.dataIndexType}`);
     
             //update the rebuildDataObject in the data_index ADAL record
-            var adalRecord = await this.saveTheRebuildDataObjectInADAL(rebuildObject);
+            var adalRecord = await this.saveTheRebuildDataObjectInADAL(rebuildData);
     
             //Check the status
-            if(rebuildObject["Status"] != "InProgress"){
-                //if not in progress 
+            if(rebuildData["Status"] != "InProgress")
+            {
                 var codeJobUUID = this.client["CodeJobUUID"] ? this.client["CodeJobUUID"] : adalRecord["PollingCodeJobUUID"];
     
                 if(codeJobUUID)
                 {//unscheduld the codeJob
                     await this.papiClient.codeJobs.upsert({UUID:codeJobUUID ,IsScheduled:false, CodeJobName:`${this.dataIndexType} rebuild polling code job`});
                 }
+
+                await this.handleRebuildEndStatus(rebuildData);
+                
             }
-            resultObject.resultObject = rebuildObject;
+
+            resultObject.resultObject = await this.getPollingResults(rebuildData);
             
         }
         catch(e){
@@ -103,7 +118,8 @@ export class DataIndexsActions{
         return resultObject
     }
 
-    public async retry(): Promise<any> {
+    public async retry(): Promise<any> 
+    {
     
         var resultObject: {[k: string]: any} = {};
         resultObject.success=true;
@@ -124,7 +140,8 @@ export class DataIndexsActions{
             resultObject.resultObject = rebuildObject;
             
         }
-        catch(e){
+        catch(e)
+        {
             resultObject.success = false;
             resultObject.erroeMessage = e.message;
         }
@@ -137,8 +154,16 @@ export class DataIndexsActions{
         if(!adalRecord){
             adalRecord = await this.papiClient.addons.data.uuid(this.client.AddonUUID).table(this.adalTableName).key(this.dataIndexType).get();
         }
-        adalRecord["RebuildData"] = rebuildObject;
-        return await this.papiClient.addons.data.uuid(this.client.AddonUUID).table(this.adalTableName).upsert(adalRecord);
+
+        if(adalRecord["RebuildData"])
+        {
+            if(!adalRecord["RebuildData"] || // if no rebuild data or the rebuild data is not up to date - update it
+            (new Date(adalRecord["RebuildData"]["ModificationDateTime"]) < new Date(rebuildObject["ModificationDateTime"]))){
+                adalRecord["RebuildData"] = rebuildObject;
+                adalRecord =  await this.papiClient.addons.data.uuid(this.client.AddonUUID).table(this.adalTableName).upsert(adalRecord);
+            }
+        }
+        return adalRecord;
     }
     
      private addDefaultFieldsByType(fieldsToExport: string[]) {
@@ -147,12 +172,12 @@ export class DataIndexsActions{
                 fieldsToExport.push("InternalID","UUID", "ActivityTypeID", "Status", "ActionDateTime", "Account.ExternalID");
                 break;
             case "transaction_lines":
-                fieldsToExport.push("InternalID","UUID","Item.ExternalID", "Transaction.Status", "Transaction.ActionDateTime", "Transaction.Account.ExternalID");
+                fieldsToExport.push("InternalID","UUID","Item.ExternalID", "Transaction.Status", "Transaction.ActionDateTime", "Transaction.Account.ExternalID","Transaction.ActivityTypeID");
                 break;
         }
     }
     
-    private async createRebuildPollingCodeJob(adalRecord) {
+    private async createRebuildPollingCodeJob(adalRecord:any) {
         var codeJobUUID = adalRecord["PollingCodeJobUUID"];
         var codeJob;
     
@@ -160,10 +185,11 @@ export class DataIndexsActions{
             // get existing codeJob
             codeJob = await this.papiClient.codeJobs.uuid(codeJobUUID).find();
         }
+        var functionName = this.getPollingFunctionName();
         var codeJobName = `${this.dataIndexType} rebuild polling code job`;
         if (codeJob["UUID"]) 
         {//unschedule existing code job
-            codeJob = await this.papiClient.codeJobs.upsert({UUID:codeJobUUID ,IsScheduled:true, CodeJobName:codeJobName});
+            codeJob = await this.papiClient.codeJobs.upsert({UUID:codeJobUUID,FunctionName:functionName ,IsScheduled:true, CodeJobName:codeJobName});
         }
         else 
         { //create new polling code job
@@ -174,10 +200,17 @@ export class DataIndexsActions{
                 CronExpression: "*/5 * * * *",
                 AddonPath: "data_index.js",
                 AddonUUID: this.client.AddonUUID,
-                FunctionName: `${this.dataIndexType}_polling`
+                FunctionName: functionName
             };
             codeJob = await this.papiClient.codeJobs.upsert(codeJob);
         }
         return codeJob;
     }
+
+    getPollingFunctionName()
+    {
+        return `${this.dataIndexType}_polling`;
+    }
+
+
 }

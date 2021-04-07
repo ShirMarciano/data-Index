@@ -9,6 +9,7 @@ export async function transaction_lines_fields(client: Client, request: Request)
     return await getDataIndexFields(client, "transaction_lines");
 }
 
+
 async function getDataIndexFields(client: Client, dataIndexType: string) {
     var papiClient = CommonMethods.getPapiClient(client);
     // need to take the fields we saved from the UI and the exported field because 
@@ -17,10 +18,20 @@ async function getDataIndexFields(client: Client, dataIndexType: string) {
     var adalRecord = await papiClient.addons.data.uuid(client.AddonUUID).table("data_index_ui").key(dataIndexType).get(); 
 
     var fields = [];
-    if (adalRecord["fields"]) {
-        fields = adalRecord["fields"];
+    if (adalRecord["Fields"]) {
+        fields = adalRecord["Fields"];
     }
 
     return { Fields: fields };
+}
+
+async function saveDataIndexFields(client: Client, dataIndexType: string, fields:string[]) {
+    var papiClient = CommonMethods.getPapiClient(client);
+
+    var adalRecord = await papiClient.addons.data.uuid(client.AddonUUID).table("data_index_ui").key(dataIndexType).get(); 
+
+    adalRecord["Fields"] = fields;
+
+    return await papiClient.addons.data.uuid(client.AddonUUID).table("data_index_ui").upsert(adalRecord);
 }
 

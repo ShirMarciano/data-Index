@@ -28,8 +28,8 @@ export async function install(client: Client, request: Request): Promise<any> {
         var res = await papiClient.post("/bulk/data_index/rebuild/install");
         
         //Create the relevant initial meta data in the data_index addon adal
-        await createInitialDataIndexTableAdalSchemaAndData("data_index", papiClient, client);
-        await createInitialDataIndexTableAdalSchemaAndData("data_index_ui", papiClient, client);
+        await createInitialDataIndexTableAdalSchemaAndData(papiClient, client);
+        await createInitialDataIndexUISchema(papiClient, client);
     }
     catch(e)
     {
@@ -39,20 +39,52 @@ export async function install(client: Client, request: Request): Promise<any> {
     return resultObject
 }
 
-async function createInitialDataIndexTableAdalSchemaAndData(tableName: string, papiClient: PapiClient, client: Client) {
+async function createInitialDataIndexTableAdalSchemaAndData( papiClient: PapiClient, client: Client) {
     var body: AddonDataScheme = {
-        Name: tableName,
+        Name: "data_index",
         Type: "meta_data"
     };
 
     //create data_index-adal schema
     await papiClient.addons.data.schemes.post(body);
-    papiClient.addons.data.uuid(client.AddonUUID).table(tableName).upsert({ Key: 'all_activities' });
-    papiClient.addons.data.uuid(client.AddonUUID).table(tableName).upsert({ Key: 'transaction_lines' });
+    papiClient.addons.data.uuid(client.AddonUUID).table("data_index").upsert({ Key: 'all_activities' });
+    papiClient.addons.data.uuid(client.AddonUUID).table("data_index").upsert({ Key: 'transaction_lines' });
+}
+
+async function createInitialDataIndexUISchema(papiClient: PapiClient, client: Client) {
+    var body: AddonDataScheme = {
+        Name: "data_index_ui",
+        Type: "meta_data"
+    };
+
+    //create data_index-adal schema
+    await papiClient.addons.data.schemes.post(body);
+    papiClient.addons.data.uuid(client.AddonUUID).table("data_index_ui").upsert({ Key: 'meta_data' });
 }
 
 export async function uninstall(client: Client, request: Request): Promise<any> {
-    return {success:true,resultObject:{}}
+
+    var resultObject: {[k: string]: any} = {};
+    resultObject.success=true;
+    resultObject.resultObject={};
+    try
+    {
+        var papiClient = new PapiClient({
+            baseURL: client.BaseURL,
+            token: client.OAuthAccessToken,
+            addonUUID: client.AddonUUID,
+            addonSecretKey: client.AddonSecretKey
+        });;
+        //delete the relevant meta data in the papi-adal
+        await papiClient.post("/bulk/data_index/rebuild/uninstall");
+        
+    }
+    catch(e)
+    {
+        resultObject.success = false;
+        resultObject.erroeMessage = e.message;
+    }
+    return resultObject
 }
 
 export async function upgrade(client: Client, request: Request): Promise<any> {
