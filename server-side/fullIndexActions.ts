@@ -21,7 +21,6 @@ export  class FullIndexActions extends DataIndexActions
                 //the all activites rebuild was finished - so I dont want to start it again - the papi function start new rebuild if the status is not in progress
                 await this.papiClient.addons.api.async().uuid(this.client.AddonUUID).file("data_index").func("transaction_lines_rebuild").post();
             }
-
         }
     }
 
@@ -32,6 +31,7 @@ export  class FullIndexActions extends DataIndexActions
 
     async getPollingResults(rebuildData:any) : Promise<any>
     {
+
         var result:any = 
         {
             AllActivitiesStatus: rebuildData["Status"],
@@ -42,6 +42,10 @@ export  class FullIndexActions extends DataIndexActions
         { 
             var tlRebuildData = await this.papiClient.post(`/bulk/data_index/rebuild/polling/${this.dataIndexType}`);
             result.TransactionLinesStatus = tlRebuildData["Status"];
+        }
+        else if(rebuildData["Status"] == "Failure")
+        {
+            result.TransactionLinesStatus = "Failure";
         }
 
         return result;

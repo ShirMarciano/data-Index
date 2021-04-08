@@ -48,7 +48,7 @@ export async function publish_job(client: Client, request: Request)
 
     try
     {
-        var adal_ui_data = getDataIndexUIAdal(papiClient,client);
+        var adal_ui_data = await getDataIndexUIAdal(papiClient,client);
 
         var al_needRebuild = await checkIfDataIndexNeedRebuild(papiClient, client, "all_activities",adal_ui_data["all_activities_fields"],result.resultObject);
         var tl_needRebuild = await checkIfDataIndexNeedRebuild(papiClient, client, "transaction_lines",adal_ui_data["transaction_lines_fields"] ,result.resultObject);
@@ -123,7 +123,7 @@ export async function get_ui_data(client: Client, request: Request)
     
     var papiClient = CommonMethods.getPapiClient(client);
 
-    var adal_ui_data = getDataIndexUIAdal(papiClient,client);
+    var adal_ui_data = await getDataIndexUIAdal(papiClient,client);
 
 
     var ui_data = {
@@ -132,7 +132,7 @@ export async function get_ui_data(client: Client, request: Request)
         ProgressData: {}
     }
 
-    if(adal_ui_data["AllActivitieFields"]) // if not exist - it is the first time the get was called  
+    if(adal_ui_data["all_activities_fields"]) // if not exist - it is the first time the get was called  
     {
         if(adal_ui_data["RunDateTime"])
         {// if we have run time - we need to check if it is in the future  and if so - the progress indicator should be the time of the run
@@ -141,7 +141,9 @@ export async function get_ui_data(client: Client, request: Request)
             if(date > nowDate) // will run in the futur
             {
                 var hour = date.getHours() == 0 ? 24 :date.getHours();
-                ui_data.ProgressData["RunTime"] = `${hour}:${date.getMinutes()}`;
+                var minutes = date.getMinutes() == 0 ? '00' :date.getHours()+'';
+
+                ui_data.ProgressData["RunTime"] = `${hour}:${minutes}`;
             }
         }
 
@@ -152,7 +154,7 @@ export async function get_ui_data(client: Client, request: Request)
             var allActivitieProgress = 
             {
                 Status : allActivitiesPolling["Status"],
-                Precentag: parseInt(allActivitiesPolling["Current"])/parseInt(allActivitiesPolling["Count"])
+                Precentag: (parseInt(allActivitiesPolling["Current"])/parseInt(allActivitiesPolling["Count"]))*100
             }
 
             var transactionLinesProgress = 
@@ -167,16 +169,18 @@ export async function get_ui_data(client: Client, request: Request)
                 transactionLinesProgress = 
                 {
                     Status : transactionLinesPolling["Status"],
-                    Precentag: parseInt(transactionLinesPolling["Current"])/parseInt(transactionLinesPolling["Count"])
+                    Precentag: (parseInt(transactionLinesPolling["Current"])/parseInt(transactionLinesPolling["Count"]))*100
                 }
 
+                ui_data.ProgressData["Status"] = transactionLinesPolling["Status"];
+                ui_data.ProgressData["Message"] = transactionLinesPolling["Message"]
+
             }
-            else if (allActivitiesPolling["Status"] == "Faild")
+            else
             {
-                ///what to do?
+                ui_data.ProgressData["Status"] = allActivitiesPolling["Status"];
+                ui_data.ProgressData["Message"] = allActivitiesPolling["Message"]
             }
-
-
 
             ui_data.ProgressData["AllActivitieProgress"] = allActivitieProgress;
             ui_data.ProgressData["TransactionLinesProgress"] = transactionLinesProgress;
@@ -199,7 +203,7 @@ export async function handle_remove_fields(client: Client, request: Request)
 
 async function getDataIndexUIAdal(papiClient: PapiClient,client: Client) 
 {
-    return await papiClient.addons.data.uuid(client.AddonUUID).table(`${adalTableName}_ui`).key("meta_data");
+    return await papiClient.addons.data.uuid(client.AddonUUID).table(`${adalTableName}_ui`).key("meta_data").get();
 }
 
 async function checkIfDataIndexNeedRebuild(papiClient: PapiClient, client: Client, dataIndexType: string,uiFields:string[], result: any) 

@@ -83,8 +83,7 @@ export  class DataIndexActions{
     public async polling(): Promise<any> {
     
         var resultObject: {[k: string]: any} = {};
-        resultObject.success=true;
-        resultObject.resultObject={};
+        resultObject = {};
         try
         {
             //Run papi_rebuild_Poling
@@ -107,11 +106,11 @@ export  class DataIndexActions{
                 
             }
 
-            resultObject.resultObject = await this.getPollingResults(rebuildData);
+            resultObject = await this.getPollingResults(rebuildData);
             
         }
-        catch(e){
-            resultObject.success = false;
+        catch(e)
+        {
             resultObject.erroeMessage = e.message;
         }
 
