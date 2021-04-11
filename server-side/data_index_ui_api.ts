@@ -285,13 +285,14 @@ async function getRebuildProgressData(papiClient: PapiClient, client: Client, ui
     if (allActivitiesPolling["Status"] == "Success") {
         var transactionLinesPolling = fullIndexPollingRes["TransactionLines"];
         
+
         transactionLinesProgress =
         {
             Status: transactionLinesPolling["Status"],
             Precentag: (parseInt(transactionLinesPolling["Current"]) / parseInt(transactionLinesPolling["Count"])) * 100
         };
 
-        ui_data.ProgressData["Status"] = transactionLinesPolling["Status"] != "" ?transactionLinesPolling["Status"] : "InProgress";
+        ui_data.ProgressData["Status"] = transactionLinesPolling["Status"] != "" ? transactionLinesPolling["Status"] : "InProgress";
         ui_data.ProgressData["Message"] = transactionLinesPolling["Message"];
 
     }
