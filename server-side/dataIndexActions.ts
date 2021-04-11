@@ -1,5 +1,5 @@
 import { Client } from "@pepperi-addons/debug-server/dist";
-import { AddonData, PapiClient } from "@pepperi-addons/papi-sdk";
+import { AddonData, CodeJob, PapiClient } from "@pepperi-addons/papi-sdk";
 import { CommonMethods } from "./CommonMethods";
 import { PNSSubscribeHelper } from "./PNSSubscribeHelper"
 
@@ -32,7 +32,7 @@ export  class DataIndexActions{
         {
             var UIAdalRecord = await this.papiClient.addons.data.uuid(this.client.AddonUUID).table(`${this.adalTableName}_ui`).key("meta_data").get();
     
-            fieldsToExport = UIAdalRecord[`${this.dataIndexType}_fields`];
+            fieldsToExport = UIAdalRecord[`${this.dataIndexType}_fields`]? UIAdalRecord[`${this.dataIndexType}_fields`] : [];
             console.log(`Start ${this.dataIndexType} rebuild function`);
     
             //Add defaultFields to fieldToExport
@@ -70,9 +70,14 @@ export  class DataIndexActions{
         return resultObject
     }
 
-    async handleRebuildEndStatus(rebuildData:any)
+    async handleRebuildStatus(adalRecord:any)
     {
-        console.log(`Data Index ${this.dataIndexType} rebuild ended with status ${rebuildData["Status"]}`)
+        var status = adalRecord["RebuildData"]["Status"];
+        if(status != "InProgress")
+        {
+            await this.unscheduledPollingCodeJob(adalRecord);
+        }
+        console.log(`Data Index ${this.dataIndexType} rebuild ended with status ${status}`)
     }
 
     async getPollingResults(rebuildData:any) : Promise<any>
@@ -93,18 +98,8 @@ export  class DataIndexActions{
             var adalRecord = await this.saveTheRebuildDataObjectInADAL(rebuildData);
     
             //Check the status
-            if(rebuildData["Status"] != "InProgress")
-            {
-                var codeJobUUID = this.client["CodeJobUUID"] ? this.client["CodeJobUUID"] : adalRecord["PollingCodeJobUUID"];
-    
-                if(codeJobUUID)
-                {//unscheduld the codeJob
-                    await this.papiClient.codeJobs.upsert({UUID:codeJobUUID ,IsScheduled:false, CodeJobName:`${this.dataIndexType} rebuild polling code job`});
-                }
+            await this.handleRebuildStatus(adalRecord);
 
-                await this.handleRebuildEndStatus(rebuildData);
-                
-            }
 
             resultObject = await this.getPollingResults(rebuildData);
             
@@ -115,6 +110,16 @@ export  class DataIndexActions{
         }
 
         return resultObject
+    }
+
+    protected async unscheduledPollingCodeJob(adalRecord: AddonData) {
+        var codeJobUUID = this.client["CodeJobUUID"] ? this.client["CodeJobUUID"] : adalRecord["PollingCodeJobUUID"];
+
+        if (codeJobUUID) { //unscheduld the codeJob
+            var codeJob = await this.papiClient.codeJobs.uuid(codeJobUUID).find();
+
+            await this.papiClient.codeJobs.upsert({ UUID: codeJobUUID, IsScheduled: false, CodeJobName: `${this.dataIndexType} rebuild polling code job` });
+        }
     }
 
     public async retry(): Promise<any> 
@@ -178,6 +183,7 @@ export  class DataIndexActions{
     
     private async createRebuildPollingCodeJob(adalRecord:any) {
         var codeJobUUID = adalRecord["PollingCodeJobUUID"];
+        var codeJobName = `${this.dataIndexType} rebuild polling code job`;
         var codeJob;
     
         if (codeJobUUID) { 
@@ -185,10 +191,11 @@ export  class DataIndexActions{
             codeJob = await this.papiClient.codeJobs.uuid(codeJobUUID).find();
         }
         var functionName = this.getPollingFunctionName();
-        var codeJobName = `${this.dataIndexType} rebuild polling code job`;
-        if (codeJob["UUID"]) 
-        {//unschedule existing code job
+
+        if (codeJob && codeJob["UUID"]) 
+        {//reschedule existing code job
             codeJob = await this.papiClient.codeJobs.upsert({UUID:codeJobUUID,FunctionName:functionName ,IsScheduled:true, CodeJobName:codeJobName});
+            console.log(`Reschedule ${codeJobName} with function '${functionName}' result: ${JSON.stringify(codeJob)}`)
         }
         else 
         { //create new polling code job
@@ -202,6 +209,9 @@ export  class DataIndexActions{
                 FunctionName: functionName
             };
             codeJob = await this.papiClient.codeJobs.upsert(codeJob);
+
+            console.log(`Create new code job ${codeJobName} with function '${functionName}' result: ${JSON.stringify(codeJob)}`)
+
         }
         return codeJob;
     }

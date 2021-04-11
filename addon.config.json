@@ -1,6 +1,6 @@
 {
   "AddonUUID": "10979a11-d7f4-41df-8993-f06bfd778304",
-  "AddonVersion": "0.0.39",
+  "AddonVersion": "0.0.61",
   "DebugPort": 4500,
   "WebappBaseUrl": "https://app.sandbox.pepperi.com",
   "DefaultEditor": "main",
@@ -8,6 +8,7 @@
     "installation.ts",
     "data_index.ts",
     "data_index_meta_data.ts",
+    "data_index_ui_api.ts",
     "all_activities_pns.ts",
     "transaction_lines_pns.ts"
   ],
@@ -40,9 +41,9 @@
       }
     ],
     "Dependencies": {
-      "papi": "9.5.410",
+      "papi": "9.5.412",
       "adal": "1.0.49",
-      "pepperi_elastic_search": "0.0.52"
+      "pepperi_elastic_search": "0.0.66"
     }
   }
 }

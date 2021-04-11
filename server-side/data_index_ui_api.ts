@@ -6,9 +6,42 @@ import { PNSSubscribeHelper } from './PNSSubscribeHelper';
 const adalTableName = "data_index";
 
 
+export async function delete_index(client: Client, request: Request) {
+
+    var papiClient = CommonMethods.getPapiClient(client);
+
+    var result:any={};
+    result.success=true;
+    result.resultObject={};
+
+    await initRebuildDataADALRecord(papiClient, "all_activities",client.AddonUUID);
+    await initRebuildDataADALRecord(papiClient, "transaction_lines",client.AddonUUID);
+
+    return await papiClient.post(`/elasticsearch/clear/data_index`);
+}
+
+async function initRebuildDataADALRecord(papiClient: PapiClient,dataIndexType:string, addonUUID:string) {
+
+    var di_AdalRecord = await papiClient.addons.data.uuid(addonUUID).table("data_index").key(dataIndexType).get();
+
+    var rebuildData = di_AdalRecord["RebuildData"];
+
+    if (rebuildData) 
+    {
+        rebuildData["FieldsToExport"] = [];
+        rebuildData["Status"] = "";
+        rebuildData["Count"] = NaN;
+        rebuildData["Current"] = NaN;
+        rebuildData["LastInternalID"] = 0;
+        di_AdalRecord["RebuildData"] = rebuildData;
+
+        var res = await papiClient.addons.data.uuid(addonUUID).table("data_index").upsert(di_AdalRecord);
+        console.log(`Init rebuild data in adal recored for data index type ${dataIndexType} results: ${JSON.stringify(res)}`)
+    }
+}
+
 export async function publish(client: Client, request: Request) {
     var papiClient = CommonMethods.getPapiClient(client);
-    var body = request.body;
 
     var result:any={};
     result.success=true;
@@ -25,22 +58,21 @@ export async function publish(client: Client, request: Request) {
             CodeJobName: "DataIndex publish job",
             IsScheduled: true,
             CronExpression: `${date.getMinutes()} ${date.getHours()} ${date.getDate()} ${date.getMonth()} *`,
-            AddonPath: "data_index_ui_helper.js",
+            AddonPath: "data_index_ui_api.js",
             AddonUUID: client.AddonUUID,
             FunctionName: "publish_job"
         };
         codeJob = await papiClient.codeJobs.upsert(codeJob);
-
     }
     else // run now
     {
-        result.resultObject = await papiClient.addons.api.uuid(client.AddonUUID).async().file("data_index_ui_helper").func("publish_job").post()
+        result.resultObject = await papiClient.addons.api.uuid(client.AddonUUID).async().file("data_index_ui_api").func("publish_job").post()
     }
 
+    return result;
 }
 
-export async function publish_job(client: Client, request: Request) 
-{
+export async function publish_job(client: Client, request: Request) {
     var papiClient = CommonMethods.getPapiClient(client);
     var result:any={};
     result.success=true;
@@ -48,7 +80,7 @@ export async function publish_job(client: Client, request: Request)
 
     try
     {
-        var adal_ui_data = await getDataIndexUIAdal(papiClient,client);
+        var adal_ui_data = await getDataIndexUIAdalRecord(papiClient,client);
 
         var al_needRebuild = await checkIfDataIndexNeedRebuild(papiClient, client, "all_activities",adal_ui_data["all_activities_fields"],result.resultObject);
         var tl_needRebuild = await checkIfDataIndexNeedRebuild(papiClient, client, "transaction_lines",adal_ui_data["transaction_lines_fields"] ,result.resultObject);
@@ -62,7 +94,6 @@ export async function publish_job(client: Client, request: Request)
         else if(al_needRebuild) // only all_activities need rebuild
         {
             result.resultObject = await papiClient.addons.api.uuid(client.AddonUUID).async().file("data_index").func("all_activities_rebuild").post()
-
         }
         else if(tl_needRebuild) // only transaction_lines need rebuild
         {
@@ -84,8 +115,7 @@ export async function publish_job(client: Client, request: Request)
     return result;
 }
 
-export async function save_ui_data(client: Client, request: Request) 
-{ //save the fields and the run tim of the rebuild
+export async function save_ui_data(client: Client, request: Request) { //save the fields and the run tim of the rebuild
     var papiClient = CommonMethods.getPapiClient(client);
 
     var uiData =  request.body;
@@ -93,7 +123,7 @@ export async function save_ui_data(client: Client, request: Request)
     var ui_adal: AddonData = {
         Key: "meta_data",
         all_activities_fields: uiData["AllActivitieFields"],
-        transaction_lines_field: uiData["TransactionLinesFields"],
+        transaction_lines_fields: uiData["TransactionLinesFields"],
         RunDateTime:null
     };
 
@@ -117,18 +147,16 @@ export async function save_ui_data(client: Client, request: Request)
     return await papiClient.addons.data.uuid(client.AddonUUID).table(`${adalTableName}_ui`).upsert(ui_adal);
 }
 
-export async function get_ui_data(client: Client, request: Request) 
-{//get the saved fields and the progress indicator 
+export async function get_ui_data(client: Client, request: Request) {//get the saved fields and the progress indicator 
 
-    
     var papiClient = CommonMethods.getPapiClient(client);
 
-    var adal_ui_data = await getDataIndexUIAdal(papiClient,client);
+    var adal_ui_data = await getDataIndexUIAdalRecord(papiClient,client);
 
 
     var ui_data = {
         AllActivitieFields : adal_ui_data["all_activities_fields"]?  adal_ui_data["all_activities_fields"] :[],
-        TransactionLinesFields: adal_ui_data["transaction_lines_field"] ? adal_ui_data["transaction_lines_field"] :[],
+        TransactionLinesFields: adal_ui_data["transaction_lines_fields"] ? adal_ui_data["transaction_lines_fields"] :[],
         ProgressData: {}
     }
 
@@ -146,44 +174,9 @@ export async function get_ui_data(client: Client, request: Request)
                 ui_data.ProgressData["RunTime"] = `${hour}:${minutes}`;
             }
         }
-
         if(!ui_data.ProgressData["RunTime"])
         { // it is running now or already run - need to get the rebuild progress
-
-            var allActivitiesPolling = await papiClient.addons.api.uuid(client.AddonUUID).file("data_index").func("all_activities_polling").post()
-            var allActivitieProgress = 
-            {
-                Status : allActivitiesPolling["Status"],
-                Precentag: (parseInt(allActivitiesPolling["Current"])/parseInt(allActivitiesPolling["Count"]))*100
-            }
-
-            var transactionLinesProgress = 
-            {
-                Status : "InProgress",
-                Precentag: 0
-            }
-
-            if(allActivitiesPolling["Status"] == "Success")
-            {
-                var transactionLinesPolling = await papiClient.addons.api.uuid(client.AddonUUID).file("data_index").func("transaction_lines_polling").post()
-                transactionLinesProgress = 
-                {
-                    Status : transactionLinesPolling["Status"],
-                    Precentag: (parseInt(transactionLinesPolling["Current"])/parseInt(transactionLinesPolling["Count"]))*100
-                }
-
-                ui_data.ProgressData["Status"] = transactionLinesPolling["Status"];
-                ui_data.ProgressData["Message"] = transactionLinesPolling["Message"]
-
-            }
-            else
-            {
-                ui_data.ProgressData["Status"] = allActivitiesPolling["Status"];
-                ui_data.ProgressData["Message"] = allActivitiesPolling["Message"]
-            }
-
-            ui_data.ProgressData["AllActivitieProgress"] = allActivitieProgress;
-            ui_data.ProgressData["TransactionLinesProgress"] = transactionLinesProgress;
+            await getRebuildProgressData(papiClient, client, ui_data);
 
         }
 
@@ -193,15 +186,14 @@ export async function get_ui_data(client: Client, request: Request)
 
 }
 
-export async function handle_remove_fields(client: Client, request: Request) 
-{
+export async function handle_remove_fields(client: Client, request: Request) {
     var body = request.body;
     var dataIndexType = body["DataIndexType"] 
     return checkAndHandleRemoveOfFieldsCase(client, dataIndexType);
 }
 
 
-async function getDataIndexUIAdal(papiClient: PapiClient,client: Client) 
+async function getDataIndexUIAdalRecord(papiClient: PapiClient,client: Client) 
 {
     return await papiClient.addons.data.uuid(client.AddonUUID).table(`${adalTableName}_ui`).key("meta_data").get();
 }
@@ -209,28 +201,38 @@ async function getDataIndexUIAdal(papiClient: PapiClient,client: Client)
 async function checkIfDataIndexNeedRebuild(papiClient: PapiClient, client: Client, dataIndexType: string,uiFields:string[], result: any) 
 {
     var di_AdalRecord = await papiClient.addons.data.uuid(client.AddonUUID).table(adalTableName).key(dataIndexType).get();
-    var exportedFields: string[] = di_AdalRecord["RebuildData"] ? di_AdalRecord["RebuildData"]["FieldsToExport"] : [];
-
-    for (var i = 0; i < uiFields.length; i++) 
-    {// if at lease one field from the fields that was saved in the UI is new - this data index type need a rebuild
-        if (!exportedFields.includes(uiFields[i])) {
+    var rebuildData =  di_AdalRecord["RebuildData"];
+    if(rebuildData)
+    {
+        if(rebuildData["Status"] == "Failure")
             return true;
+        
+        var exportedFields: string[] = rebuildData["FieldsToExport"];
+
+        for (var i = 0; i < uiFields.length; i++) 
+        {// if at lease one field from the fields that was saved in the UI is new - this data index type need a rebuild - no need to check the rest
+            if (!exportedFields.includes(uiFields[i])) 
+            {
+                return true;
+            }
         }
+        var body:any = {DataIndexType:dataIndexType};
+      
+        // no new fields - no need a rebuild - check if fields was removed - and if so update the subscriprion and the fields in all places;
+        var res = await papiClient.addons.api.uuid(client.AddonUUID).async().file("data_index_ui_api").func("handle_remove_fields").post(undefined,body)
+    
+        result[dataIndexType] = res;
+        return false;
     }
 
-    // no new fields - no need a rebuild - check if fields was removed - and if so update the subscriprion and the fields in all places;
-    var res = await papiClient.addons.api.uuid(client.AddonUUID).async().file("data_index_ui_helper").func("handle_remove_fields").post({DataIndexType:dataIndexType})
-
-    result[dataIndexType] = res;
-
-    return false;
+    return true;
 }
 
 async function checkAndHandleRemoveOfFieldsCase(client: Client, dataIndexType: string): Promise<void> 
 {
     var papiClient = CommonMethods.getPapiClient(client);
-    var di_UIAdalRecordecord = await papiClient.addons.data.uuid(client.AddonUUID).table(`$data_index_ui`).key(dataIndexType).get();
-    var uiFields = di_UIAdalRecordecord["Fields"] ? di_UIAdalRecordecord["Fields"] : [];
+    var di_UIAdalRecord = await papiClient.addons.data.uuid(client.AddonUUID).table(`data_index_ui`).key("meta_data").get();
+    var uiFields = di_UIAdalRecord[`${dataIndexType}_fields`] ? di_UIAdalRecord[`${dataIndexType}_fields`] : [];
     
     var di_AdalRecord = await papiClient.addons.data.uuid(client.AddonUUID).table("data_index").key(dataIndexType).get();
     var exportedFields :string[] = di_AdalRecord["RebuildData"] ? di_AdalRecord["RebuildData"]["FieldsToExport"] : [];
@@ -266,12 +268,43 @@ function checkIfFieldCanBeRemoved(field: string){
 }
 
 
+async function getRebuildProgressData(papiClient: PapiClient, client: Client, ui_data: { AllActivitieFields: any; TransactionLinesFields: any; ProgressData: {}; }) {
+    var fullIndexPollingRes = await papiClient.addons.api.uuid(client.AddonUUID).file("data_index").func("full_index_rebuild_polling").post();
+
+    var allActivitiesPolling = fullIndexPollingRes["AllActivities"];
+    var allActivitieProgress = {
+        Status: allActivitiesPolling["Status"],
+        Precentag: (parseInt(allActivitiesPolling["Current"]) / parseInt(allActivitiesPolling["Count"])) * 100
+    };
+
+    var transactionLinesProgress = {
+        Status: "",
+        Precentag: NaN
+    };
+
+    if (allActivitiesPolling["Status"] == "Success") {
+        var transactionLinesPolling = fullIndexPollingRes["TransactionLines"];
+        
+        transactionLinesProgress =
+        {
+            Status: transactionLinesPolling["Status"],
+            Precentag: (parseInt(transactionLinesPolling["Current"]) / parseInt(transactionLinesPolling["Count"])) * 100
+        };
+
+        ui_data.ProgressData["Status"] = transactionLinesPolling["Status"] != "" ?transactionLinesPolling["Status"] : "InProgress";
+        ui_data.ProgressData["Message"] = transactionLinesPolling["Message"];
+
+    }
+
+    else {
+        ui_data.ProgressData["Status"] = allActivitiesPolling["Status"];
+        ui_data.ProgressData["Message"] = allActivitiesPolling["Message"];
+    }
+
+    ui_data.ProgressData["AllActivitieProgress"] = allActivitieProgress;
+    ui_data.ProgressData["TransactionLinesProgress"] = transactionLinesProgress;
+}
 
 
-
-
-export async function delete_index(client: Client, request: Request) {
-
-};
 
 
