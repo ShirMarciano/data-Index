@@ -269,9 +269,8 @@ function checkIfFieldCanBeRemoved(field: string){
 
 
 async function getRebuildProgressData(papiClient: PapiClient, client: Client, ui_data: { AllActivitieFields: any; TransactionLinesFields: any; ProgressData: {}; }) {
-    var fullIndexPollingRes = await papiClient.addons.api.uuid(client.AddonUUID).file("data_index").func("full_index_rebuild_polling").post();
 
-    var allActivitiesPolling = fullIndexPollingRes["AllActivities"];
+    var allActivitiesPolling = await papiClient.addons.api.uuid(client.AddonUUID).file("data_index").func("all_activities_polling").post();
     var allActivitieProgress = {
         Status: allActivitiesPolling["Status"],
         Precentag: (parseInt(allActivitiesPolling["Current"]) / parseInt(allActivitiesPolling["Count"])) * 100
@@ -283,15 +282,23 @@ async function getRebuildProgressData(papiClient: PapiClient, client: Client, ui
     };
 
     if (allActivitiesPolling["Status"] == "Success") {
-        var transactionLinesPolling = fullIndexPollingRes["TransactionLines"];
+        var transactionLinesPolling = await papiClient.post(`/bulk/data_index/rebuild/polling/transaction_lines`);
+
+            if(new Date(transactionLinesPolling["StartDateTime"]) > new Date(allActivitiesPolling["StartDateTime"]))
+            {// transaction lines rebuild that run or is running started after all activities finished - poll the transaction lines itself
+                transactionLinesPolling = await papiClient.addons.api.sync().uuid(client.AddonUUID).file("data_index").func("transaction_lines_polling").post();
+            }
+            else
+            { // transaction lines rebuild didnt started yet (takes time to the code job to work) or at all (in case of just all activities rebuild) dont poll- take data from adal
+                var tlAdalRecord = await papiClient.addons.data.uuid(client.AddonUUID).table("data_index").key("transaction_lines").get();
+                transactionLinesPolling = tlAdalRecord["RebuildData"];
+            }
+
+            transactionLinesProgress = {
+                Status: transactionLinesPolling["Status"],
+                Precentag: (parseInt(transactionLinesPolling["Current"]) / parseInt(transactionLinesPolling["Count"])) * 100
+            };
         
-
-        transactionLinesProgress =
-        {
-            Status: transactionLinesPolling["Status"],
-            Precentag: (parseInt(transactionLinesPolling["Current"]) / parseInt(transactionLinesPolling["Count"])) * 100
-        };
-
         ui_data.ProgressData["Status"] = transactionLinesPolling["Status"] != "" ? transactionLinesPolling["Status"] : "InProgress";
         ui_data.ProgressData["Message"] = transactionLinesPolling["Message"];
 

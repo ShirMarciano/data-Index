@@ -69,18 +69,12 @@ export  class FullIndexActions extends DataIndexActions
 
         if(rebuildData["Status"] == "Success")
         { 
-            var rebuldData = {};
             var tlRebuildData = await this.papiClient.post(`/bulk/data_index/rebuild/polling/transaction_lines`);
             if(new Date(tlRebuildData["StartDateTime"]) > new Date(rebuildData["StartDateTime"]))
-            {// transaction lines rebuild that run or is runnong started after all activities finished - poll the transaction lines itself
+            {// transaction lines rebuild that run or is running started after all activities finished - poll the transaction lines itself
                 tlRebuildData = await this.papiClient.addons.api.sync().uuid(this.client.AddonUUID).file("data_index").func("transaction_lines_polling").post();
+                result.TransactionLines = tlRebuildData;
             }
-            else
-            { // transaction lines rebuild didnt starte yet, need the temp data we inserted
-                var tlAdalRecord = await this.papiClient.addons.data.uuid(this.client.AddonUUID).table("data_index").key("transaction_lines").get();
-                tlRebuildData = tlAdalRecord["RebuildData"];
-            }
-            result.TransactionLines = tlRebuildData;
         }
         else if(rebuildData["Status"] == "Failure")
         {
