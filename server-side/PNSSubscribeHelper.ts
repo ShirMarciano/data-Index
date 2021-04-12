@@ -1,5 +1,6 @@
 import { Client } from "@pepperi-addons/debug-server/dist";
 import { PapiClient } from "@pepperi-addons/papi-sdk";
+import { Console } from "console";
 import { CommonMethods } from "./CommonMethods";
 
 export class PNSSubscribeHelper{
@@ -26,7 +27,7 @@ export class PNSSubscribeHelper{
     
         //Save the updated PNSSubscribeData in ADAL
         adalRecord["PNSSubscribeData"] = PNSSubscribeData;
-        await this.papiClient.addons.data.uuid(this.client.AddonUUID).table("data_index").upsert(adalRecord);
+        await CommonMethods.saveDataIndexTypeAdalRecord(this.papiClient,this.client,adalRecord);
     
         //subscribe to PNS
         await this.subscribeToPNS(PNSSubscribeData); // subscribe to both IndexType and reference type changes
@@ -387,41 +388,19 @@ export class PNSSubscribeHelper{
     private async getRefTSAToApiResourceDictionary() {
         //returns dictionary mapping the TSA reference Name to its reference api resource
             var tsaRefToApiResource = {};
-            try
-            {
-                var res  = await this.getTypesFields();
-                res.forEach(fieldObj => {
-                    if (fieldObj.FieldID.startsWith("TSA") && fieldObj.UIType.ID == 48) //GuidReferenceType
-                    {
+
+            var res  = await CommonMethods.getTypesFields(this.papiClient,this.dataIndexType);
+            res.forEach(fieldObj => {
+                if (fieldObj.FieldID.startsWith("TSA") && fieldObj.UIType.ID == 48) //GuidReferenceType
+                {
                         tsaRefToApiResource[fieldObj.FieldID] = fieldObj.TypeSpecificFields["ReferenceToResourceType"]["Name"];
-                    }
-                });
-            }
-            catch (e)
-            {
-                var x = e;
-            }
-            
+                }
+            });
+
             return tsaRefToApiResource;
         
     }
 
-    private async getTypesFields() {
-        if(this.dataIndexType == "all_activities")
-        {
-            var transactionsFields = await this.papiClient.metaData.type("transactions").fields.get();
-            var activitiesFields = await this.papiClient.metaData.type("activities").fields.get();
-            return transactionsFields.concat(activitiesFields);
-
-        }
-        else
-        {
-            return await this.papiClient.metaData.type(this.dataIndexType).fields.get();
-
-        }
-    }
-
-
-    /* end getTypesSubscribedDataObject prinate methodes*/
+    /* end getTypesSubscribedDataObject priהate methodes*/
 
 }

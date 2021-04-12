@@ -15,23 +15,12 @@ async function getDataIndexFields(client: Client, dataIndexType: string) {
     // need to take the fields we saved from the UI and the exported field because 
     //it can be a case where the build is now immidialty and a code job will do it
     // so we want to get the fields we save in the last time 
-    var adalRecord = await papiClient.addons.data.uuid(client.AddonUUID).table("data_index_ui").key(dataIndexType).get(); 
-
+    var ui_adalRecord = await CommonMethods.getDataIndexUIAdalRecord(papiClient,client);
+    
     var fields = [];
-    if (adalRecord["Fields"]) {
-        fields = adalRecord["Fields"];
+    if (ui_adalRecord[`${dataIndexType}_fields`]) {
+        fields = ui_adalRecord[`${dataIndexType}_fields`];
     }
 
     return { Fields: fields };
 }
-
-async function saveDataIndexFields(client: Client, dataIndexType: string, fields:string[]) {
-    var papiClient = CommonMethods.getPapiClient(client);
-
-    var adalRecord = await papiClient.addons.data.uuid(client.AddonUUID).table("data_index_ui").key(dataIndexType).get(); 
-
-    adalRecord["Fields"] = fields;
-
-    return await papiClient.addons.data.uuid(client.AddonUUID).table("data_index_ui").upsert(adalRecord);
-}
-

@@ -30,17 +30,17 @@ export  class DataIndexActions{
     
         try
         {
-            var UIAdalRecord = await this.papiClient.addons.data.uuid(this.client.AddonUUID).table(`${this.adalTableName}_ui`).key("meta_data").get();
+            var UIAdalRecord = await CommonMethods.getDataIndexUIAdalRecord(this.papiClient,this.client);
     
             fieldsToExport = UIAdalRecord[`${this.dataIndexType}_fields`]? UIAdalRecord[`${this.dataIndexType}_fields`] : [];
             console.log(`Start ${this.dataIndexType} rebuild function`);
     
             //Add defaultFields to fieldToExport
-            this.addDefaultFieldsByType(fieldsToExport);
+            fieldsToExport = CommonMethods.addDefaultFieldsByType(fieldsToExport,this.dataIndexType);
     
             fieldsToExport = fieldsToExport.filter(CommonMethods.distinct)
     
-            var adalRecord = await this.papiClient.addons.data.uuid(this.client.AddonUUID).table(this.adalTableName).key(this.dataIndexType).get();
+            var adalRecord = await CommonMethods.getDataIndexTypeAdalRecord(this.papiClient,this.client,this.dataIndexType);
     
             //Unsubscribe old subscription and subscribe to new fields changes
             await pnsHelper.handleUnsubscribeAndSubscribeToPNS(adalRecord, fieldsToExport);
@@ -57,7 +57,7 @@ export  class DataIndexActions{
             adalRecord["PollingCodeJobUUID"] = codeJob["UUID"];
     
             //save the ADAL record with the RebuildData and PollingCodeJobUUID
-            await this.papiClient.addons.data.uuid(this.client.AddonUUID).table(this.adalTableName).upsert(adalRecord);
+            await CommonMethods.saveDataIndexTypeAdalRecord(this.papiClient,this.client,adalRecord);
     
             resultObject.resultObject = rebuildObject;
         }
@@ -130,7 +130,7 @@ export  class DataIndexActions{
         resultObject.resultObject={};
         try
         {
-            var adalRecord = await this.papiClient.addons.data.uuid(this.client.AddonUUID).table(this.adalTableName).key(this.dataIndexType).get();
+            var adalRecord = await CommonMethods.getDataIndexTypeAdalRecord(this.papiClient,this.client,this.dataIndexType);
     
             //Run papi_rebuild_retry
             var rebuildObject = await this.papiClient.post(`/bulk/data_index/rebuild/retry/${this.dataIndexType}`);
@@ -156,7 +156,7 @@ export  class DataIndexActions{
     
     async saveTheRebuildDataObjectInADAL(rebuildObject: Promise<any>, adalRecord? :AddonData) {
         if(!adalRecord){
-            adalRecord = await this.papiClient.addons.data.uuid(this.client.AddonUUID).table(this.adalTableName).key(this.dataIndexType).get();
+            adalRecord = await CommonMethods.getDataIndexTypeAdalRecord(this.papiClient,this.client,this.dataIndexType);
         }
 
         if(adalRecord["RebuildData"])
@@ -164,21 +164,10 @@ export  class DataIndexActions{
             if(!adalRecord["RebuildData"] || // if no rebuild data or the rebuild data is not up to date - update it
             (new Date(adalRecord["RebuildData"]["ModificationDateTime"]) < new Date(rebuildObject["ModificationDateTime"]))){
                 adalRecord["RebuildData"] = rebuildObject;
-                adalRecord =  await this.papiClient.addons.data.uuid(this.client.AddonUUID).table(this.adalTableName).upsert(adalRecord);
+                adalRecord =  await  CommonMethods.saveDataIndexTypeAdalRecord(this.papiClient,this.client,adalRecord);
             }
         }
         return adalRecord;
-    }
-    
-     private addDefaultFieldsByType(fieldsToExport: string[]) {
-        switch (this.dataIndexType) {
-            case "all_activities":
-                fieldsToExport.push("InternalID","UUID", "ActivityTypeID", "Status", "ActionDateTime", "Account.ExternalID");
-                break;
-            case "transaction_lines":
-                fieldsToExport.push("InternalID","UUID","Item.ExternalID", "Transaction.Status", "Transaction.ActionDateTime", "Transaction.Account.ExternalID","Transaction.ActivityTypeID");
-                break;
-        }
     }
     
     private async createRebuildPollingCodeJob(adalRecord:any) {

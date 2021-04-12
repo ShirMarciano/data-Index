@@ -34,6 +34,18 @@ export  class CommonMethods{
         return fieldsToSubscribe;
     }
 
+    public static addDefaultFieldsByType(fieldsToExport: string[],dataIndexType:string ) {
+        switch (dataIndexType) {
+            case "all_activities":
+                fieldsToExport.push("InternalID","UUID", "ActivityTypeID", "Status", "ActionDateTime", "Account.ExternalID");
+                break;
+            case "transaction_lines":
+                fieldsToExport.push("InternalID","UUID","Item.ExternalID", "Transaction.Status", "Transaction.ActionDateTime", "Transaction.Account.ExternalID","Transaction.ActivityTypeID");
+                break;
+        }
+        return fieldsToExport;
+    }
+
 
     public static getAPiResourcesByObjectTypeName(objectTypeName: string):string[] {
 
@@ -73,9 +85,43 @@ export  class CommonMethods{
                 APiResources= ["catalogs"]
                 break;
             default: // to support caces where the 
-                APiResources = [objectTypeName]
+                APiResources = [objectTypeName.toLowerCase()]
                 break;
         }
         return APiResources;
+    }
+
+    public static async getDataIndexTypeAdalRecord(papiClient: PapiClient,client: Client,dataIndexType:string) 
+    {
+        return await papiClient.addons.data.uuid(client.AddonUUID).table("data_index").key(dataIndexType).get();
+    }
+
+    public static async saveDataIndexTypeAdalRecord(papiClient: PapiClient,client: Client, typeAdalRecord :any) 
+    {
+        return await papiClient.addons.data.uuid(client.AddonUUID).table("data_index").upsert(typeAdalRecord);
+    }
+
+    public static async getDataIndexUIAdalRecord(papiClient: PapiClient,client: Client) 
+    {
+        return await papiClient.addons.data.uuid(client.AddonUUID).table("data_index_ui").key("meta_data").get();
+    }
+
+    public static async  saveDataIndexUIAdalRecord(papiClient: PapiClient,client: Client, uiAdalRecord :any) 
+    {
+        return await papiClient.addons.data.uuid(client.AddonUUID).table("data_index_ui").upsert(uiAdalRecord);
+    }
+
+    public static async getTypesFields(papiClient:PapiClient,resource:string) {
+        if(resource == "all_activities")
+        {
+            var transactionsFields = await papiClient.metaData.type("transactions").fields.get();
+            var activitiesFields = await papiClient.metaData.type("activities").fields.get();
+            
+            return transactionsFields.concat(activitiesFields);
+        }
+        else
+        {
+            return await papiClient.metaData.type(resource).fields.get();
+        }
     }
 }

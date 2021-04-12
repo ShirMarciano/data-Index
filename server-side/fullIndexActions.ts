@@ -1,4 +1,5 @@
 import { Client } from "@pepperi-addons/debug-server/dist";
+import { CommonMethods } from "./CommonMethods";
 import { DataIndexActions } from "./dataIndexActions";
 
 
@@ -40,8 +41,9 @@ export  class FullIndexActions extends DataIndexActions
         }
     }
 
-    private async setTrsanactionLinesTempInProgressData() {
-        var tlAdalRecord = await this.papiClient.addons.data.uuid(this.client.AddonUUID).table("data_index").key("transaction_lines").get();
+    private async setTrsanactionLinesTempInProgressData() 
+    {
+        var tlAdalRecord = await CommonMethods.getDataIndexTypeAdalRecord(this.papiClient, this.client,"transaction_lines");
         if(!tlAdalRecord["RebuildData"])
         {
             tlAdalRecord["RebuildData"] = {}
@@ -50,7 +52,8 @@ export  class FullIndexActions extends DataIndexActions
         tlAdalRecord["RebuildData"]["Count"] = 0;
         tlAdalRecord["RebuildData"]["Current"] = 0;
         tlAdalRecord["RebuildData"]["Message"] = "";
-        await this.papiClient.addons.data.uuid(this.client.AddonUUID).table("data_index").upsert(tlAdalRecord);
+
+        await CommonMethods.saveDataIndexTypeAdalRecord(this.papiClient, this.client,tlAdalRecord);
     }
 
     getPollingFunctionName()
