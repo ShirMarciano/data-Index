@@ -7,7 +7,7 @@ import { AppRoutingModule } from './app.routes';
 import { AppComponent } from './app.component';
 import { PepUIModule } from './modules/pepperi.module';
 import { MaterialModule } from './modules/material.module';
-import { AddonModule } from './components/addon/addon.module';
+import { AddonModule } from './components/data-index/data-index.module';
 
 @NgModule({
     declarations: [

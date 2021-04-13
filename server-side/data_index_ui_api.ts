@@ -6,17 +6,18 @@ import { PNSSubscribeHelper } from './PNSSubscribeHelper';
 const adalTableName = "data_index";
 
 
-/***************              Get UI Saved DATA           *****************/
+/***************              Get UI DATA           *****************/
 
-export async function get_ui_saved_data(client: Client, request: Request) {//get the saved fields and the progress indicator 
+export async function get_ui_data(client: Client, request: Request) {//get the saved fields and the progress indicator 
 
     var papiClient = CommonMethods.getPapiClient(client);
 
     var UI_adalRecord = await CommonMethods.getDataIndexUIAdalRecord(papiClient,client);
 
     var ui_data = {
-        all_activities_fields : UI_adalRecord["all_activities_fields"]?  UI_adalRecord["all_activities_fields"] :[],
-        transaction_lines_fields: UI_adalRecord["transaction_lines_fields"] ? UI_adalRecord["transaction_lines_fields"] :[],
+        Fields: await getFields(papiClient), //the fields for the dropdowns and the defaultFields
+        all_activities_saved_fields : UI_adalRecord["all_activities_fields"]?  UI_adalRecord["all_activities_fields"] :[],
+        transaction_lines_saved_fields: UI_adalRecord["transaction_lines_fields"] ? UI_adalRecord["transaction_lines_fields"] :[],
         ProgressData: {}
     }
 
@@ -46,7 +47,65 @@ export async function get_ui_saved_data(client: Client, request: Request) {//get
 
 }
 
-async function getRebuildProgressData(papiClient: PapiClient, client: Client, ui_data: { all_activities_fields: any; transaction_lines_fields: any; ProgressData: {}; }) {
+async function getFields(papiClient: PapiClient) { // get the needed fields for the drop downs
+    
+    var types = ["Transaction","Activity","Account","Transaction_Lines","Item",]
+
+    var typeToFields:any = { }
+
+    for(var t in types){
+        var objectType = types[t];
+        var fieldsApiNames :string[] = [];
+        var resource = CommonMethods.getAPiResourcesByObjectTypeName(types[t])[0];
+
+        var fields = await CommonMethods.getTypesFields(papiClient,resource);
+
+        fields.forEach(fieldObj => {
+            if (checkIfFieldIsValid(fieldObj,objectType)) //GuidReferenceType
+            {
+                    fieldsApiNames.push(fieldObj.FieldID);
+            }
+        });
+        
+        fieldsApiNames = fieldsApiNames.filter(CommonMethods.distinct);
+
+        typeToFields[objectType] = fieldsApiNames;
+    }
+
+    var typeToDefaultFields = {
+        "all_activities": CommonMethods.addDefaultFieldsByType([],"all_ativities"),
+        "transaction_lines": CommonMethods.addDefaultFieldsByType([],"transaction_lines")
+    }
+
+    return { DataIndexTypeDefaultFields: typeToDefaultFields,
+            TypesFields: typeToFields
+        };
+
+}
+
+function checkIfFieldIsValid(field:ApiFieldObject,objectType:string)
+{
+    var valid = true;
+    if(field.FieldID.startsWith("TSA"))
+    {
+        valid = field.UIType.ID != 48 && field.UIType.ID != 49; // not reference TSA and not buttomn TSA
+    }
+    else if((objectType == "Transaction" || objectType == "Activity") && field.FieldID == "Type") //	Transaction Type – since a change in transaction type will require changing all the transaction lines of that type.
+    {
+        valid = false
+    }
+    else
+    {
+        valid = field.FieldID != "ModificationDateTime" && field.FieldID != "AccountExternalID" && field.FieldID != "ItemExternalID";
+    }
+
+    // reference fields doesnt come in meta data fields api call
+    return valid;
+
+}
+
+
+async function getRebuildProgressData(papiClient: PapiClient, client: Client, ui_data: any) {
 
     var allActivitiesPolling = await papiClient.addons.api.uuid(client.AddonUUID).file("data_index").func("all_activities_polling").post();
     var allActivitieProgress = {
@@ -330,61 +389,7 @@ function checkIfFieldCanBeRemoved(field: string){
 
 /*********************************************************************************/
 
-/***************                    Get fields                 *******************/
 
-export async function get_fields(client: Client, request: Request) { // get the needed fields for the drop downs
-
-    var papiClient = CommonMethods.getPapiClient(client);
-    
-    var types = ["Transaction","Activity","Account","Transaction_Lines","Item",]
-
-    var typeToFields:any = { }
-
-    for(var t in types){
-        var objectType = types[t];
-        var fieldsApiNames :string[] = [];
-        var resource = CommonMethods.getAPiResourcesByObjectTypeName(types[t])[0];
-
-        var fields = await CommonMethods.getTypesFields(papiClient,resource);
-
-        fields.forEach(fieldObj => {
-            if (checkIfFieldIsValid(fieldObj,objectType)) //GuidReferenceType
-            {
-                    fieldsApiNames.push(fieldObj.FieldID);
-            }
-        });
-        
-        fieldsApiNames = fieldsApiNames.filter(CommonMethods.distinct);
-
-        typeToFields[objectType] = fieldsApiNames;
-    }
-
-    return typeToFields;
-
-}
-
-function checkIfFieldIsValid(field:ApiFieldObject,objectType:string)
-{
-    var valid = true;
-    if(field.FieldID.startsWith("TSA"))
-    {
-        valid = field.UIType.ID != 48 && field.UIType.ID != 49; // not reference TSA and not buttomn TSA
-    }
-    else if((objectType == "Transaction" || objectType == "Activity") && field.FieldID == "Type") //	Transaction Type – since a change in transaction type will require changing all the transaction lines of that type.
-    {
-        valid = false
-    }
-    else
-    {
-        valid = field.FieldID != "ModificationDateTime" && field.FieldID != "AccountExternalID" && field.FieldID != "ItemExternalID";
-    }
-
-    // reference fields doesnt come in meta data fields api call
-    return valid;
-
-}
-
-/******************************************************************************/
 
 
 

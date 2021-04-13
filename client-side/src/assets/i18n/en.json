@@ -1,4 +1,23 @@
 {
     "Components_Example_Title": "@pep-addons/ngx-lib : Pepperi Components - Library components written with Angular10",
-    "List_Example_Title": "Pep list example"
+    "List_Example_Title": "Pep list example",
+    "Data_index_all_activities": "Activities & Transactions",
+    "Data_index_transaction_lines": "Transaction lines",
+    "Data_index_publish": "Publish",
+    "Data_index_publish_description": "Indexing the data will take some time. During this time, the indexed data will not be updated",
+    "Data_index_publish_question":"Do you wish to run the process now or at a later time?",
+    "Data_index_publish_run_now":"Run now",
+    "Data_index_publish_run_at":"Run at",
+    "Data_index_delete_index": "Delete the indexed data",
+    "Data_index_delete_body": "Are you sure you want to delete all the indexed data?",
+    "Data_index_fields": "Fields",
+    "Data_index_chooseFieldDescription": "Define the fields which be indexed",
+    "Data_index": "Data Index",
+    "Data_index_add": "Add",
+    "Data_index_failedToPublish":"Failed to publish the data",
+    "Data_index_processScheduledToRunAt:":"The process is scheduled to run at:",
+    "Ok": "ok",
+    "Confirm": "Confirm",
+    "Cancel":"Cancel"
+
 }

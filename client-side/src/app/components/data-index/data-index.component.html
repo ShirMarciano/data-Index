@@ -1,0 +1,38 @@
+<div class="plugin-page-container">
+
+    <div class="header-content">
+        <div class="content pep-border-bottom">
+            <div class="left-container spacing-element-negative pull-left flip">
+                <div class="spacing-element title">
+                    {{ 'Data_index' | translate }}
+                </div>
+            </div>
+            <div class="right-container spacing-element-negative pull-right flip">
+                <pep-menu class="menu spacing-element pull-left flip" items="menuOptions"
+                    (menuItemClick)="onMenuItemClicked($event)">
+                </pep-menu>
+                <button mat-button class="mat-button pep-button dm strong pep-spacing-element" (Click)="publishClicked()"
+                    [disabled]="disablePublish">
+                    {{ "Data_index_publish" | translate }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="content">
+            <mat-tab-group #tabGroup animationDuration="0ms" class="fixed-header">
+                <mat-tab label="{{ 'Data_index_all_activities' | translate}}">
+                        <ng-template matTabContent>
+                    </ng-template>
+                 </mat-tab>
+
+                <mat-tab label="{{ 'Data_index_transaction_lines' | translate}}">
+                    <ng-template matTabContent>
+                    </ng-template>
+                </mat-tab>
+            </mat-tab-group>
+        </div>
+    </div>
+
+</div>
