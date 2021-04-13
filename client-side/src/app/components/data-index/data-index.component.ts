@@ -14,6 +14,9 @@ import { Router, ActivatedRoute } from "@angular/router";
 import { PepLayoutService, PepScreenSizeType } from '@pepperi-addons/ngx-lib';
 import { DataIndexService } from './data-index.service';
 import { identifierModuleUrl } from "@angular/compiler";
+
+import { PublishDialogComponent } from '../dialogs/publish-dialog.component';
+
 import { of } from "rxjs";
 
 
@@ -57,7 +60,7 @@ export class DataIndexComponent implements OnInit {
         public routeParams: ActivatedRoute,
         public router: Router,
         public compiler: Compiler,
-        public layoutService: PepLayoutService,
+        public layoutService: PepLayoutService
     ) {
 
         // Parameters sent from url
@@ -145,6 +148,15 @@ export class DataIndexComponent implements OnInit {
         //get the fields to save
 
         //open dialog
+        const dialogRef = this.dataIndexService.openPublishDialog(PublishDialogComponent);
+        dialogRef.afterClosed().subscribe(dialogResult => {
+            if(dialogResult.runType == "2"){
+                //add run tyme to saved object
+            }
+            
+        });
+
+
     }
 
     errorDetailsClick(){

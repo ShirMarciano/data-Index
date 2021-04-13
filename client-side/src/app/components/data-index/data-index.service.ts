@@ -5,6 +5,7 @@ import { Injectable } from '@angular/core';
 import {PepAddonService, PepHttpService, PepDataConvertorService, PepSessionService} from '@pepperi-addons/ngx-lib';
 
 import { PepDialogActionButton, PepDialogData, PepDialogService } from '@pepperi-addons/ngx-lib/dialog';
+import { PublishDialogComponent } from '../dialogs/publish-dialog.component';
 
 @Injectable({ providedIn: 'root' })
 export class DataIndexService {
@@ -69,6 +70,10 @@ export class DataIndexService {
             showClose: true,
         });
         this.dialogService.openDefaultDialog(dialogData);
+    }
+
+    openPublishDialog(componentOrTemplateRef: any) {
+        return this.dialogService.openDialog(componentOrTemplateRef,);
     }
     
 }
