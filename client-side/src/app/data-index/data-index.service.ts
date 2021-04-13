@@ -52,17 +52,19 @@ export class DataIndexService {
         this.addonService.postAddonApiCall(this.pluginUUID,"data_index_ui_api","delete_index").subscribe(res => successFunc(res), err => errorFunc(err));
     }
 
-    openDialog(title: string, content: string, confirmCallback?: any) {
-        const confirmButton: PepDialogActionButton = {
-            title: "Confirm",
-            className: "",
-            callback: confirmCallback,
-        };
+    openDialog(title: string, content: string, buttonText?:string,confirmCallback?: any) {
+        var actionButtons:PepDialogActionButton[] = []
+        if(buttonText)
+            actionButtons.push( {
+                title: buttonText,
+                className: "",
+                callback: confirmCallback,
+            });
 
         const dialogData = new PepDialogData({
             title: title,
             content: content,
-            actionButtons: [confirmButton],
+            actionButtons: actionButtons,
             type: "custom",
             showClose: true,
         });

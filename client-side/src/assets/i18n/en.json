@@ -4,7 +4,7 @@
     "Data_index_all_activities": "Activities & Transactions",
     "Data_index_transaction_lines": "Transaction lines",
     "Data_index_publish": "Publish",
-    "Data_index_publish_description": "Indexing the data will take some time. During this time, the indexed data will not be updated",
+    "Data_index_publish_body": "Indexing the data will take some time. During this time, the indexed data will not be updated",
     "Data_index_publish_question":"Do you wish to run the process now or at a later time?",
     "Data_index_publish_run_now":"Run now",
     "Data_index_publish_run_at":"Run at",
@@ -15,9 +15,16 @@
     "Data_index": "Data Index",
     "Data_index_add": "Add",
     "Data_index_failedToPublish":"Failed to publish the data",
+    "Data_index_failure_details":"Failure detaild",
     "Data_index_processScheduledToRunAt:":"The process is scheduled to run at:",
-    "Ok": "ok",
-    "Confirm": "Confirm",
-    "Cancel":"Cancel"
+    "Data_index_object_type_all_activities": "Activity/Transaction",
+    "Data_index_object_type_Account": "Account",
+    "Data_index_object_type_Item": "Item",
+    "Data_index_object_type_Transaction": "Transaction",
+    "Data_index_object_type_Transaction_line": "Transaction_line",
+    "Data_index_Confirm": "Confirm",
+    "Data_index_Cancel":"Cancel",
+    "Data_index_OK":"OK"
+
 
 }

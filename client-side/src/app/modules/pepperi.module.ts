@@ -20,6 +20,10 @@ import { PepTextareaModule } from '@pepperi-addons/ngx-lib/textarea';
 import { PepTextboxModule } from '@pepperi-addons/ngx-lib/textbox';
 import { PepListModule } from '@pepperi-addons/ngx-lib/list';
 import { PepMenuModule } from '@pepperi-addons/ngx-lib/menu';
+import { PepTopBarModule } from '@pepperi-addons/ngx-lib/top-bar';
+import { MatTimepickerModule } from 'mat-timepicker';
+
+
 
 import {
     PepIconModule,
@@ -113,12 +117,15 @@ const pepperiComponentsModules = [
     PepTextareaModule,
     PepTextboxModule,
     PepIconModule,
-    PepMenuModule
+    PepMenuModule,
+    PepButtonModule,
+    PepTopBarModule,
 ];
 
 import { TranslateModule, TranslateLoader, TranslateService } from '@ngx-translate/core';
 import { TranslateHttpLoader } from '@ngx-translate/http-loader';
 import { MultiTranslateHttpLoader } from 'ngx-translate-multi-http-loader';
+import { PepButton, PepButtonModule } from '@pepperi-addons/ngx-lib/button';
 
 // export function createTranslateLoader(http: HttpClient) {
 //    return new TranslateHttpLoader(http, '/assets/i18n/', '.json');
@@ -150,6 +157,7 @@ export function createTranslateLoader(http: HttpClient, fileService: PepFileServ
 @NgModule({
     declarations: [],
     imports: [
+        MatTimepickerModule,
         CommonModule,
         PepNgxLibModule,
         pepperiComponentsModules,

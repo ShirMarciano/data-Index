@@ -18,7 +18,6 @@ import { of } from "rxjs";
 
 
 
-
 @Component({
   selector: 'data-index',
   templateUrl: './data-index.component.html',
@@ -32,12 +31,25 @@ export class DataIndexComponent implements OnInit {
     uiData:any;
     disablePublish:boolean;
     progressIndicator:string;
-    progressFaild:string;
-    indexingFaild:boolean;
+    indexingFaild:boolean = false;
     indexingError:string;
 
-    menuOptions = [];
+    transaction_lines_DefaultFields:string[];
+    all_activities_DefaultFields:string[];
 
+    all_activities_types = [
+        {key:"all_activities", value:this.translate.instant("Data_index_object_type_all_activities")},
+        {key:"Account", value:this.translate.instant("Data_index_object_type_Account")}
+    ]
+
+    transaction_lines_types = [
+        {key:"transaction_lines", value:this.translate.instant("Data_index_object_type_Transaction_line")},
+        {key:"Item", value:this.translate.instant("Data_index_object_type_Item")},
+        {key:"Transaction", value:this.translate.instant("Data_index_object_type_Transaction")},
+        {key:"Transaction.Account", value:this.translate.instant("Data_index_object_type_Account")}
+    ]
+
+    menuOptions = [];
 
     constructor(
         public dataIndexService: DataIndexService,
@@ -64,7 +76,6 @@ export class DataIndexComponent implements OnInit {
 
   ngOnInit(): void {
 
-    this.menuOptions = [{ key: 'delete_index', text: this.translate.instant('Data_index_delete_index')}];
 
     this.uiData = this.dataIndexService.getUIData((result: any) => {
 
@@ -81,7 +92,7 @@ export class DataIndexComponent implements OnInit {
 
         this.setProgressIndicator(progressData, progressStatus);
 
-        
+        this.menuOptions = [{ key: 'delete_index', text: this.translate.instant('Data_index_delete_index')}];
 
        });
 
@@ -96,13 +107,15 @@ export class DataIndexComponent implements OnInit {
         else if (progressStatus) {
 
             if (progressStatus == "Failure") {
-                this.progressFaild = `Failed to publish the data`;
+                this.progressIndicator = `Failed to publish the data`;
                 this.indexingFaild = true;
                 this.indexingError = progressData["Message"];
-            }else{
-                var alPrecentage = progressData["all_activities_progress"]["Precentage"];
+            }
+            else
+            {
+                var alPrecentage = progressData["all_activities_progress"]["Precentag"];
                 alPrecentage = alPrecentage != "" ? alPrecentage : 0;
-                var tlPrecentage = progressData["transaction_lines_progress"]["Precentage"];
+                var tlPrecentage = progressData["transaction_lines_progress"]["Precentag"];
                 tlPrecentage = tlPrecentage != "" ? tlPrecentage : 0;
 
                 this.progressIndicator = `Activities & Transactions indexing ${alPrecentage}% completed, Transaction lines indexing ${tlPrecentage}% completed `;
@@ -111,13 +124,41 @@ export class DataIndexComponent implements OnInit {
         }
     }
 
+    private getDistinctFieldsObj(fields:{Key:string,Value:string}[])
+    {
+        let distinctFields:{Key:string,Value:string}[] = [];
+        let map = new Map();
+        for (let field of fields) {
+            if(!map.has(field.Key)){
+                map.set(field.Key, true);    // set any value to Map
+                distinctFields.push({
+                     Key: field.Key,
+                    Value: field.Value
+                });
+            }
+        }
+
+        return distinctFields;
+    }
+
     publishClicked(){
         //get the fields to save
+
         //open dialog
     }
 
+    errorDetailsClick(){
+        this.dataIndexService.openDialog(
+            this.translate.instant(
+                "Data_index_failure_details"
+            ),
+            this.indexingError
+        );
+
+    }
+
     onMenuItemClicked(event) {
-        switch (event.apiName) {
+        switch (event.source.key) {
             case 'delete_index': {
                 this.dataIndexService.openDialog(
                     this.translate.instant(
@@ -125,6 +166,9 @@ export class DataIndexComponent implements OnInit {
                     ),
                     this.translate.instant(
                         "Data_index_delete_body"
+                    ),
+                    this.translate.instant(
+                        "Confirm"
                     ),
                     () =>{ 
                         var res = this.dataIndexService.deleteIndex(()=>{});

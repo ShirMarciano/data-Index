@@ -49,13 +49,13 @@ export async function get_ui_data(client: Client, request: Request) {//get the s
 
 async function getFields(papiClient: PapiClient) { // get the needed fields for the drop downs
     
-    var types = ["Transaction","Activity","Account","Transaction_Lines","Item",]
+    var types = ["Transaction","Activity","Account","transaction_lines","Item",]
 
     var typeToFields:any = { }
 
     for(var t in types){
         var objectType = types[t];
-        var fieldsApiNames :string[] = [];
+        var fieldsObjects :{Key:string,Value:string}[] = [];
         var resource = CommonMethods.getAPiResourcesByObjectTypeName(types[t])[0];
 
         var fields = await CommonMethods.getTypesFields(papiClient,resource);
@@ -63,13 +63,13 @@ async function getFields(papiClient: PapiClient) { // get the needed fields for 
         fields.forEach(fieldObj => {
             if (checkIfFieldIsValid(fieldObj,objectType)) //GuidReferenceType
             {
-                    fieldsApiNames.push(fieldObj.FieldID);
+                fieldsObjects.push({Key:fieldObj.FieldID, Value:fieldObj.Label});
             }
         });
         
-        fieldsApiNames = fieldsApiNames.filter(CommonMethods.distinct);
+        //fieldsObjects = CommonMethods.getDistinctFieldsObj(fieldsObjects)
 
-        typeToFields[objectType] = fieldsApiNames;
+        typeToFields[objectType] = fieldsObjects;
     }
 
     var typeToDefaultFields = {

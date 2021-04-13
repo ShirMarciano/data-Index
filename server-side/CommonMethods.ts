@@ -13,7 +13,7 @@ export  class CommonMethods{
 
     public static distinct(value, index, self) {
             return self.indexOf(value) === index;
-        }
+    }
 
     public static collectFieldsToSubscribeToOnTheApiResource(fieldsData: any) {
         var fieldsToSubscribe: string[] = [];
