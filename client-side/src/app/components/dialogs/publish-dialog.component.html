@@ -1,5 +1,5 @@
 <div class="dialog">
-    <pep-dialog>
+    <pep-dialog showClose="false">
         <ng-container pep-dialog-content>
             <p class="body-xs">
                 {{'Data_index_publish_body' | translate}}
@@ -7,19 +7,20 @@
             <p class="body-xs">
                 {{'Data_index_publish_question' | translate}}
             </p>
-            <mat-radio-group  class="" [(ngModel)]="runType">
-                <mat-radio-button class=""  value="1">
+           <mat-radio-group>
+                <mat-radio-button class="mat-radio-button pull-left pep-radio-button " checked value="1">
                     {{ 'Data_index_publish_run_now' | translate}}
                 </mat-radio-button>
-                    <mat-radio-button class=""  value="2">
+                    <mat-radio-button class="mat-radio-button pull-left pep-radio-button"  value="2">
                         <div>{{ 'Data_index_publish_run_at' | translate}}</div>
-                        <!--input matTimepicker #t="matTimepicker" #time="ngModel"
+                        <!-- <input matTimepicker #t="matTimepicker" #time="ngModel"
                         [strict]="false" id="timepicker" mode="24h" [ngModel]="runTime"
                         placeholder="Please select time..." name="time" required="runType==2">
-                        <mat-icon matSuffix (click)="t.showDialog()">access_time</mat-icon>-->
+                        <mat-icon matSuffix (click)="t.showDialog()">access_time</mat-icon> -->
                 </mat-radio-button>
-            </mat-radio-group>
+            </mat-radio-group> 
         </ng-container>
+
     <ng-container pep-dialog-actions class="pepperi-border-top">
             <div class="spacing-element-negative">
                 <button class="spacing-element pepperi-button md weak mat-button" mat-button [mat-dialog-close]>

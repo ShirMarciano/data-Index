@@ -1,48 +1,50 @@
 <div class="addon-page-container">
-        <pep-top-bar [title]="'Data_index' | translate">
-            <div header-start-content>
-            </div>
-            <div header-end-content>
-                <div>
-                    <div class="progress-indicator">{{ progressIndicator }}</div>
-                    <pep-button  ngIf="indexingFaild"  [value]="'Data_index_failure_details' | translate"
-                    [sizeType]="'sm'" [styleType]="'weak'" [classNames]="'pep-spacing-element pull-left flip'"
-                    (buttonClick)="errorDetailsClick()"></pep-button>
-                </div>
-                <pep-button  [value]="'Data_index_publish' | translate"
-                    [sizeType]="'md'" [styleType]="'strong'" [classNames]="'pep-spacing-element pull-left flip'"
-                    (buttonClick)="publishClicked()"></pep-button>
-            
-                <pep-menu class="menu pull-left flip pep-spacing-element" 
-                    [items]="menuOptions" (menuItemClick)="onMenuItemClicked($event)"></pep-menu>
-            </div>
-        </pep-top-bar>
-
-        
-
-    <div class="main-content">
-        <div class="content">
-            <mat-tab-group #tabGroup animationDuration="0ms" class="fixed-header">
-                <mat-tab label="{{ 'Data_index_all_activities' | translate}}">
-                        <ng-template matTabContent>
-                            <p class="body-md narrow">
-                                {{ "Data_index_chooseFieldDescription" | translate }}
-                            </p>
-                            <div id="fields-container">
-                                <div class="pepperi-border-bottom section-title">
-                                    <h4>
-                                        {{ "Data_index_fields" | translate }}
-                                    </h4>
-                                </div>
-                            </div>
-                    </ng-template>
-                 </mat-tab>
-
-                <mat-tab label="{{ 'Data_index_transaction_lines' | translate}}">
-                    <ng-template matTabContent>
-                    </ng-template>
-                </mat-tab>
-            </mat-tab-group>
+     <pep-top-bar [title]="'Data_index' | translate">
+        <div header-start-content>
         </div>
+        <div header-end-content>
+            <div>
+                <div class="progress-indicator">{{ progressIndicator }}</div>
+                <pep-button  *ngIf="indexingFaild"  [value]="'Data_index_failure_details' | translate"
+                [sizeType]="'sm'" [styleType]="'weak'" [classNames]="'pep-spacing-element pull-left flip'"
+                (buttonClick)="errorDetailsClick()">
+            </pep-button>
+            </div>
+            <pep-menu class="menu pull-left flip pep-spacing-element" 
+                [items]="menuOptions" (menuItemClick)="onMenuItemClicked($event)">
+            </pep-menu>
+            <pep-button  [value]="'Data_index_publish' | translate"
+                [sizeType]="'md'" [styleType]="'strong'" [classNames]="'pep-spacing-element pull-left flip'"
+                (buttonClick)="publishClicked()">
+        </pep-button> 
+        </div>
+    </pep-top-bar> 
+
+    
+
+<div class="main-content">
+    <div class="content">
+         <mat-tab-group #tabGroup animationDuration="0ms" class="fixed-header">
+            <mat-tab label="{{ 'Data_index_all_activities' | translate}}">
+                    <ng-template matTabContent>
+                        <p class="body-md narrow">
+                            {{ "Data_index_chooseFieldDescription" | translate }}
+                        </p>
+                        <div id="fields-container">
+                            <div class="pepperi-border-bottom section-title">
+                                <h4>
+                                    {{ "Data_index_fields" | translate }}
+                                </h4>
+                            </div>
+                        </div>
+                </ng-template>
+             </mat-tab>
+
+            <mat-tab label="{{ 'Data_index_transaction_lines' | translate}}">
+                <ng-template matTabContent>
+                </ng-template>
+            </mat-tab>
+        </mat-tab-group>
     </div>
+</div>
 </div>

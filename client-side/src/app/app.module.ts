@@ -7,7 +7,7 @@ import { AppRoutingModule } from './app.routes';
 import { AppComponent } from './app.component';
 import { PepUIModule } from './modules/pepperi.module';
 import { MaterialModule } from './modules/material.module';
-import { AddonModule } from './components/data-index/data-index.module';
+import { DataIndexModule } from './components/data-index/data-index.module';
 
 @NgModule({
     declarations: [
@@ -20,7 +20,7 @@ import { AddonModule } from './components/data-index/data-index.module';
         AppRoutingModule,
         PepUIModule,
         MaterialModule,
-        AddonModule
+        DataIndexModule
     ],
     providers: [],
     bootstrap: [AppComponent]

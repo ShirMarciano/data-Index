@@ -37,8 +37,8 @@ export class DataIndexComponent implements OnInit {
     indexingFaild:boolean = false;
     indexingError:string;
 
-    transaction_lines_DefaultFields:string[];
-    all_activities_DefaultFields:string[];
+    transaction_lines_fieldsToExport:string[];
+    all_activities_fieldsToExport:string[];
 
     all_activities_types = [
         {key:"all_activities", value:this.translate.instant("Data_index_object_type_all_activities")},
@@ -150,9 +150,17 @@ export class DataIndexComponent implements OnInit {
         //open dialog
         const dialogRef = this.dataIndexService.openPublishDialog(PublishDialogComponent);
         dialogRef.afterClosed().subscribe(dialogResult => {
+            var data = {
+                all_activities_fields: this.all_activities_fieldsToExport,
+                transaction_lines_fields: this.transaction_lines_fieldsToExport,
+                RunTime:null
+            };
             if(dialogResult.runType == "2"){
-                //add run tyme to saved object
+                //add run time to saved object
+                data.RunTime = dialogResult.runTime;
             }
+
+            this.dataIndexService.publish(data,()=>{})
             
         });
 

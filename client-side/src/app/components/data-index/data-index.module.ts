@@ -3,11 +3,12 @@ import { NgModule } from '@angular/core';
 import { PepUIModule } from '../../modules/pepperi.module';
 import { MaterialModule } from '../../modules/material.module';
 import { DataIndexComponent } from './data-index.component';
+import { PublishDialogComponent } from '../dialogs/publish-dialog.component';
 
 @NgModule({
     declarations: [
-        DataIndexComponent
-
+        DataIndexComponent,
+        PublishDialogComponent
     ],
     imports: [
         CommonModule,
@@ -17,7 +18,7 @@ import { DataIndexComponent } from './data-index.component';
     ],
     providers: []
 })
-export class AddonModule {
+export class DataIndexModule {
 }
 
 

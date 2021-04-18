@@ -1,9 +1,9 @@
-<ng-container *ngIf="clientMode == 'Standalone'; then standalone; else singleSpa">
+<router-outlet></router-outlet>
 
+<!--<ng-container *ngIf="clientMode == 'Standalone'; then standalone; else singleSpa">
 </ng-container>
-<ng-template #singleSpa>
-    <router-outlet></router-outlet>
-</ng-template>
+<ng-template #singleSpa>-->
+<!--</ng-template>
 <ng-template #standalone>
     <div class="viewportDiv" #viewportDiv pepRtlDirection >
         <header>
@@ -39,4 +39,4 @@
         </main>
     </div>
 </ng-template>
-<pep-size-detector></pep-size-detector>
+<pep-size-detector></pep-size-detector>-->

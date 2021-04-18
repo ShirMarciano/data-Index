@@ -22,6 +22,10 @@ import { PepListModule } from '@pepperi-addons/ngx-lib/list';
 import { PepMenuModule } from '@pepperi-addons/ngx-lib/menu';
 import { PepTopBarModule } from '@pepperi-addons/ngx-lib/top-bar';
 import { MatTimepickerModule } from 'mat-timepicker';
+import { TranslateModule, TranslateLoader, TranslateService } from '@ngx-translate/core';
+import { MultiTranslateHttpLoader } from 'ngx-translate-multi-http-loader';
+import { PepButtonModule } from '@pepperi-addons/ngx-lib/button';
+import { PepDialogModule } from '@pepperi-addons/ngx-lib/dialog';
 
 
 
@@ -123,11 +127,6 @@ const pepperiComponentsModules = [
     PepDialogModule
 ];
 
-import { TranslateModule, TranslateLoader, TranslateService } from '@ngx-translate/core';
-import { TranslateHttpLoader } from '@ngx-translate/http-loader';
-import { MultiTranslateHttpLoader } from 'ngx-translate-multi-http-loader';
-import { PepButton, PepButtonModule } from '@pepperi-addons/ngx-lib/button';
-import { PepDialogModule } from '@pepperi-addons/ngx-lib/dialog';
 
 // export function createTranslateLoader(http: HttpClient) {
 //    return new TranslateHttpLoader(http, '/assets/i18n/', '.json');
