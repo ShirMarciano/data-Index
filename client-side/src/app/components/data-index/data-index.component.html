@@ -4,7 +4,7 @@
         </div>
         <div header-end-content>
             <div>
-                <div class="progress-indicator">{{ progressIndicator }}</div>
+                <div class="progress-indicator pep-spacing-element">{{ progressIndicator }}</div>
                 <pep-button  *ngIf="indexingFaild"  [value]="'Data_index_failure_details' | translate"
                 [sizeType]="'sm'" [styleType]="'weak'" [classNames]="'pep-spacing-element pull-left flip'"
                 (buttonClick)="errorDetailsClick()">
@@ -19,8 +19,6 @@
         </pep-button> 
         </div>
     </pep-top-bar> 
-
-    
 
 <div class="main-content">
     <div class="content">

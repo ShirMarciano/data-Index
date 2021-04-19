@@ -160,7 +160,7 @@ export class DataIndexComponent implements OnInit {
                 data.RunTime = dialogResult.runTime;
             }
 
-            this.dataIndexService.publish(data,()=>{})
+            //this.dataIndexService.publish(data,()=>{})
             
         });
 

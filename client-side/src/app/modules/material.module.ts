@@ -4,7 +4,7 @@ import { ScrollingModule } from '@angular/cdk/scrolling';
 import { CdkStepperModule } from '@angular/cdk/stepper';
 import { CdkTableModule } from '@angular/cdk/table';
 import { CdkTreeModule } from '@angular/cdk/tree';
-import { NgModule } from '@angular/core';
+import { NgModule, } from '@angular/core';
 import { BidiModule } from '@angular/cdk/bidi';
 import { MatNativeDateModule, MatRippleModule } from '@angular/material/core';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
@@ -17,6 +17,9 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatDatetimepickerModule, MatNativeDatetimeModule } from '@mat-datetimepicker/core';
+import { FormsModule } from '@angular/forms';
+
+
 
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
@@ -95,7 +98,9 @@ const matComponentsModules = [
         DragDropModule,
         ScrollingModule,
         BidiModule,
-        matComponentsModules
+        matComponentsModules,
+        FormsModule,
+    
     ],
     declarations: [],
     exports: [
@@ -106,6 +111,7 @@ const matComponentsModules = [
         DragDropModule,
         ScrollingModule,
         BidiModule,
+        FormsModule,
         matComponentsModules
     ],
     providers: [{provide: MAT_LABEL_GLOBAL_OPTIONS, useValue: {float: 'never'}}],

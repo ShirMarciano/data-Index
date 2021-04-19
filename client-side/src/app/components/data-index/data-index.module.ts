@@ -5,6 +5,7 @@ import { MaterialModule } from '../../modules/material.module';
 import { DataIndexComponent } from './data-index.component';
 import { PublishDialogComponent } from '../dialogs/publish-dialog.component';
 
+
 @NgModule({
     declarations: [
         DataIndexComponent,
@@ -13,7 +14,7 @@ import { PublishDialogComponent } from '../dialogs/publish-dialog.component';
     imports: [
         CommonModule,
         PepUIModule,
-        MaterialModule,
+        MaterialModule
 
     ],
     providers: []

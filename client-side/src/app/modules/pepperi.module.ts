@@ -21,7 +21,6 @@ import { PepTextboxModule } from '@pepperi-addons/ngx-lib/textbox';
 import { PepListModule } from '@pepperi-addons/ngx-lib/list';
 import { PepMenuModule } from '@pepperi-addons/ngx-lib/menu';
 import { PepTopBarModule } from '@pepperi-addons/ngx-lib/top-bar';
-import { MatTimepickerModule } from 'mat-timepicker';
 import { TranslateModule, TranslateLoader, TranslateService } from '@ngx-translate/core';
 import { MultiTranslateHttpLoader } from 'ngx-translate-multi-http-loader';
 import { PepButtonModule } from '@pepperi-addons/ngx-lib/button';
@@ -66,6 +65,7 @@ import {
     pepIconViewMatrix,
     pepIconViewLine
 } from '@pepperi-addons/ngx-lib/icon';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 const pepIcons = [
     pepIconSystemBolt,
     pepIconNoImage,
@@ -168,7 +168,8 @@ export function createTranslateLoader(http: HttpClient, fileService: PepFileServ
                 deps: [HttpClient, PepFileService, PepAddonService]
             }
         }),
-        MatTimepickerModule
+        FormsModule,
+        ReactiveFormsModule
     ],
     exports: [
         PepNgxLibModule,

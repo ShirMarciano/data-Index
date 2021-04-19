@@ -8,6 +8,7 @@ import { AppComponent } from './app.component';
 import { PepUIModule } from './modules/pepperi.module';
 import { MaterialModule } from './modules/material.module';
 import { DataIndexModule } from './components/data-index/data-index.module';
+import { FormsModule } from '@angular/forms';
 
 @NgModule({
     declarations: [
@@ -20,7 +21,8 @@ import { DataIndexModule } from './components/data-index/data-index.module';
         AppRoutingModule,
         PepUIModule,
         MaterialModule,
-        DataIndexModule
+        DataIndexModule,
+        FormsModule
     ],
     providers: [],
     bootstrap: [AppComponent]

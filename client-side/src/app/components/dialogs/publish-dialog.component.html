@@ -1,43 +1,36 @@
 <div class="dialog">
-    <pep-dialog showClose="false">
+    <pep-dialog [showClose]="false" [showHeader]="false">
         <ng-container pep-dialog-content>
-            <p class="body-xs">
+            <p class="body-md">
                 {{'Data_index_publish_body' | translate}}
             </p>
-            <p class="body-xs">
+            <p class="body-md">
                 {{'Data_index_publish_question' | translate}}
             </p>
-           <mat-radio-group>
-                <mat-radio-button class="mat-radio-button pull-left pep-radio-button " checked value="1">
+           <mat-radio-group class="radio-group" [(ngModel)]="outputData.runType">
+                <mat-radio-button class="mat-radio-button pull-left pep-radio-button radio-spacing" checked value="1">
                     {{ 'Data_index_publish_run_now' | translate}}
                 </mat-radio-button>
-                    <mat-radio-button class="mat-radio-button pull-left pep-radio-button"  value="2">
-                        <div>{{ 'Data_index_publish_run_at' | translate}}</div>
-                        <!-- <input matTimepicker #t="matTimepicker" #time="ngModel"
-                        [strict]="false" id="timepicker" mode="24h" [ngModel]="runTime"
-                        placeholder="Please select time..." name="time" required="runType==2">
-                        <mat-icon matSuffix (click)="t.showDialog()">access_time</mat-icon> -->
+                <mat-radio-button class="mat-radio-button pull-left pep-radio-button radio-spacing"  value="2">
+                   {{ 'Data_index_publish_run_at' | translate}}
                 </mat-radio-button>
+                <pep-select [showTitle]="false" [emptyOption]="false" [value]="outputData.runTime"
+                        [options]="timeOptions" (valueChange)="onTimeChange($event)"></pep-select>
             </mat-radio-group> 
         </ng-container>
 
     <ng-container pep-dialog-actions class="pepperi-border-top">
             <div class="spacing-element-negative">
-                <button class="spacing-element pepperi-button md weak mat-button" mat-button [mat-dialog-close]>
-                <span class="mat-button-wrapper">
-                    {{ 'Data_index_Cancel' | translate }}
-                </span>
-                <div class="mat-button-ripple mat-ripple" matripple></div>
-                <div class="mat-button-focus-overlay"></div> 
-            </button>
-            <button class="spacing-element pepperi-button md strong mat-button" mat-button
+            <pep-button  [value]="'Data_index_Cancel' | translate"
+                [sizeType]="'md'" [styleType]="'weak'" [classNames]="'pep-spacing-element pull-left flip'"
+                [mat-dialog-close]>
+            </pep-button> 
+            <pep-button  [value]="'Data_index_Confirm' | translate"
+                [sizeType]="'md'" [styleType]="'strong'" [classNames]="'pep-spacing-element pull-left flip'"
                 [mat-dialog-close]="outputData">
-                <span class="mat-button-wrapper">
-                    {{ 'Data_index_Confirm' | translate }}
-                </span>
-                <div class="mat-button-ripple mat-ripple" matripple></div>
-                <div class="mat-button-focus-overlay"></div>
-            </button>
+            </pep-button> 
+
+            
             </div>
         </ng-container>
     </pep-dialog>
