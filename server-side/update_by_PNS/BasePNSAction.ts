@@ -61,7 +61,7 @@ export abstract class BasePNSAction {
         return res;
     }
 
-    getRowsToUploadFromApiResult(fieldsToExport: string[], apiResult: any) {
+    public getRowsToUploadFromApiResult(fieldsToExport: string[], apiResult: any) {
         var rowsToUpload: any[] = [];
 
         var hiddenFieldExported = fieldsToExport.includes("Hidden");
