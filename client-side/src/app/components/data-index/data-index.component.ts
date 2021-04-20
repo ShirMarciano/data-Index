@@ -8,6 +8,9 @@ import {
     Compiler,
     ViewChild,
     OnDestroy,
+    AfterViewInit,
+    ViewContainerRef,
+    TemplateRef,
 } from "@angular/core";
 import { TranslateService } from "@ngx-translate/core";
 import { Router, ActivatedRoute } from "@angular/router";
@@ -18,6 +21,7 @@ import { identifierModuleUrl } from "@angular/compiler";
 import { PublishDialogComponent } from '../dialogs/publish-dialog.component';
 
 import { of } from "rxjs";
+import { FormArray, FormBuilder, FormGroup } from "@angular/forms";
 
 
 
@@ -40,19 +44,16 @@ export class DataIndexComponent implements OnInit {
     transaction_lines_fieldsToExport:string[];
     all_activities_fieldsToExport:string[];
 
-    all_activities_types = [
-        {key:"all_activities", value:this.translate.instant("Data_index_object_type_all_activities")},
-        {key:"Account", value:this.translate.instant("Data_index_object_type_Account")}
-    ]
+    all_activities_types = []
 
-    transaction_lines_types = [
-        {key:"transaction_lines", value:this.translate.instant("Data_index_object_type_Transaction_line")},
-        {key:"Item", value:this.translate.instant("Data_index_object_type_Item")},
-        {key:"Transaction", value:this.translate.instant("Data_index_object_type_Transaction")},
-        {key:"Transaction.Account", value:this.translate.instant("Data_index_object_type_Account")}
-    ]
+    all_activities_fieldsOptions = {}
 
-    menuOptions = [];
+    transaction_lines_types = []
+
+    transaction_lines_fieldsOptions = {}
+
+    menuOptions = []
+
 
     constructor(
         public dataIndexService: DataIndexService,
@@ -60,7 +61,8 @@ export class DataIndexComponent implements OnInit {
         public routeParams: ActivatedRoute,
         public router: Router,
         public compiler: Compiler,
-        public layoutService: PepLayoutService
+        public layoutService: PepLayoutService,
+
     ) {
 
         // Parameters sent from url
@@ -72,37 +74,72 @@ export class DataIndexComponent implements OnInit {
         this.layoutService.onResize$.subscribe(size => {
             this.screenSize = size;
         });
+    
+    }
 
-        
+    addField():void{
 
     }
 
+    removeField(i:number){
+    }
+     
+    
   ngOnInit(): void {
-
 
     this.uiData = this.dataIndexService.getUIData((result: any) => {
 
         this.uiData = result;
-        var fields = this.uiData['Fields'];
+
+        var fields = this.uiData['Fields']; // //the fields for the dropdowns and the defaultFields
         this.defaultFields = fields['DataIndexTypeDefaultFields'];
         this.typesFields = fields['TypesFields'];
 
+        this.all_activities_fieldsToExport = this.uiData['all_activities_saved_fields'];
+        this.transaction_lines_fieldsToExport= this.uiData['transaction_lines_saved_fields'];
 
-        var progressData = this.uiData['ProgressData'];
-        var progressStatus = progressData['Status'];
+
+        var progressStatus = this.uiData['ProgressData']['Status'];
 
         this.disablePublish = progressStatus && progressStatus == 'InProgress'
 
-        this.setProgressIndicator(progressData, progressStatus);
+        this.setProgressIndicator(this.uiData['ProgressData']);
 
         this.menuOptions = [{ key: 'delete_index', text: this.translate.instant('Data_index_delete_index')}];
+
+        this.all_activities_types = [
+            {key:"all_activities", value:this.translate.instant("Data_index_object_type_all_activities")},
+            {key:"Account", value:this.translate.instant("Data_index_object_type_Account")}
+        ]
+    
+        this.all_activities_fieldsOptions = {
+            "all_activities" : [{key:1,value:1},{key:2,value:2},{key:3,value:3}],
+            "Account" : [{key:10,value:10},{key:20,value:20},{key:30,value:30}]
+    
+        }
+    
+        this.transaction_lines_types = [
+            {key:"transaction_lines", value:this.translate.instant("Data_index_object_type_Transaction_line")},
+            {key:"Item", value:this.translate.instant("Data_index_object_type_Item")},
+            {key:"Transaction", value:this.translate.instant("Data_index_object_type_Transaction")},
+            {key:"Transaction.Account", value:this.translate.instant("Data_index_object_type_Account")}
+        ]
+    
+        this.transaction_lines_fieldsOptions = {
+            "transaction_lines": [],
+            "Item":[],
+            "Transaction":[],
+            "Transaction.Account":[]
+        }
+
 
        });
 
        
   }
 
-    private setProgressIndicator(progressData: any, progressStatus: any) {
+    private setProgressIndicator(progressData: any) {
+        var progressStatus=progressData["Status"]
         this.progressIndicator = "";
         if (progressData["RunTime"]) {
             this.progressIndicator = `The process is scheduled to run at: ${progressData["RunTime"]}`;
@@ -155,7 +192,7 @@ export class DataIndexComponent implements OnInit {
                 transaction_lines_fields: this.transaction_lines_fieldsToExport,
                 RunTime:null
             };
-            if(dialogResult.runType == "2"){
+            if(dialogResult.runType == "2"){ // type 2 is run at option of the publish
                 //add run time to saved object
                 data.RunTime = dialogResult.runTime;
             }
@@ -191,10 +228,12 @@ export class DataIndexComponent implements OnInit {
                         "Confirm"
                     ),
                     () =>{ 
-                        var res = this.dataIndexService.deleteIndex(()=>{});
-                        if(res["success"] == true){
-                            this.progressIndicator="";
-                        }
+                        this.dataIndexService.deleteIndex((res)=>{
+                            if(res["success"] == true){
+                                this.progressIndicator="";
+                            }
+                        });
+                       
                     }
                 );
                 

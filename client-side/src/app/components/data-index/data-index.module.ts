@@ -4,6 +4,7 @@ import { PepUIModule } from '../../modules/pepperi.module';
 import { MaterialModule } from '../../modules/material.module';
 import { DataIndexComponent } from './data-index.component';
 import { PublishDialogComponent } from '../dialogs/publish-dialog.component';
+import { ReactiveFormsModule } from '@angular/forms';
 
 
 @NgModule({
@@ -14,7 +15,8 @@ import { PublishDialogComponent } from '../dialogs/publish-dialog.component';
     imports: [
         CommonModule,
         PepUIModule,
-        MaterialModule
+        MaterialModule,
+        ReactiveFormsModule
 
     ],
     providers: []
