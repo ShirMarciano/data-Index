@@ -54,8 +54,8 @@ export class DataIndexComponent implements OnInit {
 
     menuOptions = []
 
-    fields = [ 1, 2, 3];
-
+    fields = []; 
+    
     constructor(
         public dataIndexService: DataIndexService,
         private translate: TranslateService,
@@ -77,14 +77,6 @@ export class DataIndexComponent implements OnInit {
         });
     
     }
-
-    addField():void{
-
-    }
-
-    removeField(i:number){
-    }
-     
     
   ngOnInit(): void {
 
@@ -113,8 +105,9 @@ export class DataIndexComponent implements OnInit {
             {key:"Account", value:this.translate.instant("Data_index_object_type_Account")}
         ]
     
+        var transaction_activities = this.typesFields["Transaction"].concat(this.typesFields["Activity"])
         this.all_activities_fieldsOptions = {
-            "all_activities" :this.typesFields["all_activities"],
+            "all_activities" :this.getDistinctFieldsObj(transaction_activities),
             "Account" : this.typesFields["Account"]
     
         }
@@ -133,10 +126,11 @@ export class DataIndexComponent implements OnInit {
             "Transaction.Account":[]
         }
 
+        this.fields.push({type:"Account", apiName:"Name", default:false});
+        this.fields.push({type:"all_activities", apiName:"ActionDateTime",default:true});
+        this.fields.push({type:"all_activities", apiName:"Hidden",default:false});
 
        });
-
-       
   }
 
     private setProgressIndicator(progressData: any) {
@@ -155,9 +149,9 @@ export class DataIndexComponent implements OnInit {
             else
             {
                 var alPrecentage = progressData["all_activities_progress"]["Precentag"];
-                alPrecentage = alPrecentage != "" ? alPrecentage : 0;
+                alPrecentage = alPrecentage != "" && alPrecentage != null? alPrecentage : 0;
                 var tlPrecentage = progressData["transaction_lines_progress"]["Precentag"];
-                tlPrecentage = tlPrecentage != "" ? tlPrecentage : 0;
+                tlPrecentage = tlPrecentage != "" && tlPrecentage != null  ? tlPrecentage : 0;
 
                 this.progressIndicator = `Activities & Transactions indexing ${alPrecentage}% completed, Transaction lines indexing ${tlPrecentage}% completed `;
 
@@ -165,16 +159,17 @@ export class DataIndexComponent implements OnInit {
         }
     }
 
-    private getDistinctFieldsObj(fields:{Key:string,Value:string}[])
+    private getDistinctFieldsObj(fields:{key:string,value:string}[])
     {
-        let distinctFields:{Key:string,Value:string}[] = [];
+        let distinctFields:{key:string,value:string}[] = [];
         let map = new Map();
         for (let field of fields) {
-            if(!map.has(field.Key)){
-                map.set(field.Key, true);    // set any value to Map
+            let key = field.key;
+            if(!map.has(key)){
+                map.set(key, true);   
                 distinctFields.push({
-                     Key: field.Key,
-                    Value: field.Value
+                     key: key,
+                    value: field.value
                 });
             }
         }
@@ -184,11 +179,20 @@ export class DataIndexComponent implements OnInit {
 
     addFieldRow(){
         var self = this;
-        self.fields.push(self.fields.length);
+        self.fields.push({type:"all_activities", apiName:null, default:false});
     }
 
     deleteFieldRow(rowNum){
-        alert(rowNum);
+        var self = this;
+        self.fields.splice(rowNum,1);
+    }
+
+    onTypeChange(event){
+        alert(event.value);
+    }
+
+    onApiNameChange(event){
+        alert(event.value);
     }
 
     publishClicked(){

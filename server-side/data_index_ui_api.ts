@@ -148,7 +148,8 @@ function isInIgnoreList(field:string):boolean{
         'ParentImage',
         'SetName',
         'SpecialOfferLeadingOrderPortfolioItemUUID',
-        'UOM'
+        'UOM',
+        'Archive'
     ]
 
     return fieldsToIgnoe.includes(field);
@@ -160,7 +161,7 @@ async function getRebuildProgressData(papiClient: PapiClient, client: Client, ui
     var allActivitiesPolling = await papiClient.addons.api.uuid(client.AddonUUID).file("data_index").func("all_activities_polling").post();
     var allActivitieProgress = {
         Status: allActivitiesPolling["Status"],
-        Precentag: (parseInt(allActivitiesPolling["Current"]) / parseInt(allActivitiesPolling["Count"])) * 100
+        Precentag:  Math.round((parseInt(allActivitiesPolling["Current"]) / parseInt(allActivitiesPolling["Count"])) * 100)
     };
 
     var transactionLinesProgress = {
@@ -187,7 +188,7 @@ async function getRebuildProgressData(papiClient: PapiClient, client: Client, ui
 
             transactionLinesProgress = {
                 Status: transactionLinesPolling["Status"],
-                Precentag: (parseInt(transactionLinesPolling["Current"]) / parseInt(transactionLinesPolling["Count"])) * 100
+                Precentag: Math.round((parseInt(transactionLinesPolling["Current"]) / parseInt(transactionLinesPolling["Count"])) * 100)
             };
         
         ui_data.ProgressData["Status"] = transactionLinesPolling["Status"] != "" ? transactionLinesPolling["Status"] : "InProgress";
