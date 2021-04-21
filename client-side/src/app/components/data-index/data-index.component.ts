@@ -113,11 +113,11 @@ export class DataIndexComponent implements OnInit {
         ]
     
         this.all_activities_fieldsOptions = {
-            "all_activities" : [{key:1,value:1},{key:2,value:2},{key:3,value:3}],
-            "Account" : [{key:10,value:10},{key:20,value:20},{key:30,value:30}]
+            "all_activities" :this.typesFields["all_activities"],
+            "Account" : this.typesFields["Account"]
     
         }
-    
+
         this.transaction_lines_types = [
             {key:"transaction_lines", value:this.translate.instant("Data_index_object_type_Transaction_line")},
             {key:"Item", value:this.translate.instant("Data_index_object_type_Item")},

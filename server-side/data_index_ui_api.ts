@@ -73,7 +73,7 @@ async function getFields(papiClient: PapiClient) { // get the needed fields for 
     }
 
     var typeToDefaultFields = {
-        "all_activities": CommonMethods.addDefaultFieldsByType([],"all_ativities"),
+        "all_activities": CommonMethods.addDefaultFieldsByType([],"all_activities"),
         "transaction_lines": CommonMethods.addDefaultFieldsByType([],"transaction_lines")
     }
 
@@ -85,23 +85,73 @@ async function getFields(papiClient: PapiClient) { // get the needed fields for 
 
 function checkIfFieldIsValid(field:ApiFieldObject,objectType:string)
 {
+    
     var valid = true;
     if(field.FieldID.startsWith("TSA"))
     {
         valid = field.UIType.ID != 48 && field.UIType.ID != 49; // not reference TSA and not buttomn TSA
     }
-    else if((objectType == "Transaction" || objectType == "Activity") && field.FieldID == "Type") //	Transaction Type – since a change in transaction type will require changing all the transaction lines of that type.
-    {
-        valid = false
-    }
     else
     {
-        valid = field.FieldID != "ModificationDateTime" && field.FieldID != "AccountExternalID" && field.FieldID != "ItemExternalID";
+        valid = !isInIgnoreList(field.FieldID);
     }
 
-    // reference fields doesnt come in meta data fields api call
+    // reference fields doesnt come in meta data fields api call so no if case on it
     return valid;
 
+}
+
+function isInIgnoreList(field:string):boolean{
+    //calculated fields that are not supported
+    var fieldsToIgnoe = 
+        ['BillToAddress',
+        'BillToCity',
+        'BillToCountry',
+        'BillToCountryIso',
+        'BillToFax',
+        'BillToName',
+        'BillToPhone',
+        'BillToState',
+        'BillToStateIso',
+        'BillToStreet',
+        'BillToZipCode',
+        'Branch',
+        'ContactPersonList',
+        'ContactPersonName',
+        'CreatorExternalID',
+        'Currency',
+        'CurrencySymbol',
+        'ShipToAddress',
+        'ShipToCity',
+        'ShipToCountry',
+        'ShipToCountryIso',
+        'ShipToExternalID',
+        'ShipToFax',
+        'ShipToName',
+        'ShipToPhone',
+        'ShipToState',
+        'ShipToStateIso',
+        'ShipToStreet',
+        'ShipToZipCode',
+        'Signature',
+        'TotalsBox',
+        'Type', // problematic field - changing ATD name will cause massive update in elastic and also e have problem to get update in it on PNS
+        'ModificationDateTime',
+        'AccountExternalID',
+        'ItemExternalID',
+        'ColorImage',
+        'Image',
+        'ItemInStockQuantity',
+        'LastOrderItemDate',
+        'LastOrderItemPrice',
+        'LastOrderItemQuantity',
+        'ParentImage',
+        'SetName',
+        'SpecialOfferLeadingOrderPortfolioItemUUID',
+        'UOM'
+    ]
+
+    return fieldsToIgnoe.includes(field);
 }
 
 
@@ -166,6 +216,8 @@ export async function delete_index(client: Client, request: Request) {
     var result:any={};
     result.success=true;
     result.resultObject={};
+
+    var res = await papiClient.post("/bulk/data_index/rebuild/install");//init papi adal record 
 
     await initRebuildDataADALRecord(papiClient, client,"all_activities");
     await initRebuildDataADALRecord(papiClient, client,"transaction_lines");

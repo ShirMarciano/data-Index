@@ -16,7 +16,7 @@
     "Data_index_add": "Add",
     "Data_index_remove": "Remove",
     "Data_index_failedToPublish":"Failed to publish the data",
-    "Data_index_failure_details":"Failure detaild",
+    "Data_index_failure_details":"Failure details",
     "Data_index_processScheduledToRunAt:":"The process is scheduled to run at:",
     "Data_index_object_type_all_activities": "Activity/Transaction",
     "Data_index_object_type_Account": "Account",
