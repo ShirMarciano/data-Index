@@ -55,7 +55,7 @@ async function getFields(papiClient: PapiClient) { // get the needed fields for 
 
     for(var t in types){
         var objectType = types[t];
-        var fieldsObjects :{Key:string,Value:string}[] = [];
+        var fieldsObjects :{key:string,value:string}[] = [];
         var resource = CommonMethods.getAPiResourcesByObjectTypeName(types[t])[0];
 
         var fields = await CommonMethods.getTypesFields(papiClient,resource);
@@ -63,7 +63,7 @@ async function getFields(papiClient: PapiClient) { // get the needed fields for 
         fields.forEach(fieldObj => {
             if (checkIfFieldIsValid(fieldObj,objectType)) //GuidReferenceType
             {
-                fieldsObjects.push({Key:fieldObj.FieldID, Value:fieldObj.Label});
+                fieldsObjects.push({key:fieldObj.FieldID, value:fieldObj.Label});
             }
         });
         
