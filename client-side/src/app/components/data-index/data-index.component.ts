@@ -54,6 +54,7 @@ export class DataIndexComponent implements OnInit {
 
     menuOptions = []
 
+    fields = [ 1, 2, 3];
 
     constructor(
         public dataIndexService: DataIndexService,
@@ -179,6 +180,15 @@ export class DataIndexComponent implements OnInit {
         }
 
         return distinctFields;
+    }
+
+    addFieldRow(){
+        var self = this;
+        self.fields.push(self.fields.length);
+    }
+
+    deleteFieldRow(rowNum){
+        alert(rowNum);
     }
 
     publishClicked(){

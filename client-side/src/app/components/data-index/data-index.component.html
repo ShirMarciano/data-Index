@@ -34,6 +34,24 @@
                                     {{ "Data_index_fields" | translate }}
                                 </h4>
                             </div>
+                        
+                            <div *ngFor="let field of fields; let i = index" class="fieldRow" id="row_{{i}}">
+                                    <label class="pull-left flip">{{i+1}}.</label>
+                                    <pep-select  [showTitle]="false" [emptyOption]="false"
+                                    [options]="all_activities_types" class="pull-left flip"></pep-select>
+                                    <pep-select  [showTitle]="false" [emptyOption]="false"
+                                    [options]="all_activities_types" class="pull-left flip"></pep-select>
+                                    <mat-icon class="pull-left flip" (click)="deleteFieldRow(i)">
+                                        <pep-icon name="system_bin"></pep-icon>
+                                    </mat-icon>
+                            </div>
+
+                            <pep-button  [value]="'Data_index_add' | translate" [iconName]="'number_plus'"
+                            [sizeType]="'sm'" [styleType]="'strong'" [classNames]="'pull-left flip'"
+                            (buttonClick)="addFieldRow()">
+                            </pep-button>  
+
+
                         </div>
                 </ng-template>
              </mat-tab>
