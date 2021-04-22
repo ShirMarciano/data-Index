@@ -265,16 +265,27 @@ export async function publish(client: Client, request: Request) {
     if(UI_adalRecord["RunDateTime"]) // create job to run
     {
         let date: Date = new Date(UI_adalRecord["RunDateTime"]);  
+        var cronExpression = `${date.getMinutes()} ${date.getHours()} ${date.getDate()} ${date.getMonth()} *`;
+        var codeJob:CodeJob;
+        var codeJobs = await papiClient.codeJobs.find({where:"CodeJobName='DataIndex publish job'", include_deleted:false});
 
-        var codeJob:CodeJob = {
-            Type: "AddonJob",
-            CodeJobName: "DataIndex publish job",
-            IsScheduled: true,
-            CronExpression: `${date.getMinutes()} ${date.getHours()} ${date.getDate()} ${date.getMonth()} *`,
-            AddonPath: "data_index_ui_api.js",
-            AddonUUID: client.AddonUUID,
-            FunctionName: "publish_job"
-        };
+        if(codeJobs && codeJobs.length > 0) // update existing code job cron
+        {
+            codeJob = codeJobs[0];
+            codeJob.CronExpression = cronExpression
+        }
+        else
+        {
+            codeJob = {
+                Type: "AddonJob",
+                CodeJobName: "DataIndex publish job",
+                IsScheduled: true,
+                CronExpression: cronExpression,
+                AddonPath: "data_index_ui_api.js",
+                AddonUUID: client.AddonUUID,
+                FunctionName: "publish_job"
+            };
+        }
         codeJob = await papiClient.codeJobs.upsert(codeJob);
     }
     else // run now

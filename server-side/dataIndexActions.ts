@@ -27,7 +27,9 @@ export  class DataIndexActions{
     
         var fieldsToExport : string[];
         var pnsHelper = new PNSSubscribeHelper(this.client,this.dataIndexType);
-    
+
+        var adalRecord = await CommonMethods.getDataIndexTypeAdalRecord(this.papiClient,this.client,this.dataIndexType);
+
         try
         {
             var UIAdalRecord = await CommonMethods.getDataIndexUIAdalRecord(this.papiClient,this.client);
@@ -39,8 +41,6 @@ export  class DataIndexActions{
             fieldsToExport = CommonMethods.addDefaultFieldsByType(fieldsToExport,this.dataIndexType);
     
             fieldsToExport = fieldsToExport.filter(CommonMethods.distinct)
-    
-            var adalRecord = await CommonMethods.getDataIndexTypeAdalRecord(this.papiClient,this.client,this.dataIndexType);
     
             //Unsubscribe old subscription and subscribe to new fields changes
             await pnsHelper.handleUnsubscribeAndSubscribeToPNS(adalRecord, fieldsToExport);
@@ -65,6 +65,11 @@ export  class DataIndexActions{
         {
             resultObject.success = false;
             resultObject.erroeMessage = e.message;
+
+            adalRecord["RebuildData"]["Status"] = 'Failure';
+            adalRecord["RebuildData"]["Message"] = e.message;
+            await CommonMethods.saveDataIndexTypeAdalRecord(this.papiClient,this.client,adalRecord);
+
         }
         
         return resultObject
@@ -101,7 +106,7 @@ export  class DataIndexActions{
             await this.handleRebuildStatus(adalRecord);
 
 
-            resultObject = await this.getPollingResults(rebuildData);
+            resultObject = await this.getPollingResults(adalRecord["RebuildData"]);
             
         }
         catch(e)
@@ -158,15 +163,14 @@ export  class DataIndexActions{
         if(!adalRecord){
             adalRecord = await CommonMethods.getDataIndexTypeAdalRecord(this.papiClient,this.client,this.dataIndexType);
         }
-
-        if(adalRecord["RebuildData"])
-        {
-            if(!adalRecord["RebuildData"] || // if no rebuild data or the rebuild data is not up to date - update it
-            (new Date(adalRecord["RebuildData"]["ModificationDateTime"]) < new Date(rebuildObject["ModificationDateTime"]))){
+        
+        if(!adalRecord["RebuildData"] || // if no rebuild data or the rebuild data is not up to date - update it
+            (new Date(adalRecord["RebuildData"]["ModificationDateTime"]) < new Date(rebuildObject["ModificationDateTime"])))
+            {
                 adalRecord["RebuildData"] = rebuildObject;
                 adalRecord =  await  CommonMethods.saveDataIndexTypeAdalRecord(this.papiClient,this.client,adalRecord);
             }
-        }
+        
         return adalRecord;
     }
     

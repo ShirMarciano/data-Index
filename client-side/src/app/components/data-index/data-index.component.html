@@ -3,13 +3,11 @@
         <div header-start-content>
         </div>
         <div header-end-content>
-            <div>
-                <div class="progress-indicator pep-spacing-element">{{ progressIndicator }}</div>
-                <pep-button  *ngIf="indexingFaild"  [value]="'Data_index_failure_details' | translate"
-                [sizeType]="'sm'" [styleType]="'weak'" [classNames]="'pep-spacing-element pull-left flip'"
-                (buttonClick)="errorDetailsClick()">
+            <div class="progress-indicator pep-spacing-element">{{ progressIndicator }}</div>
+            <pep-button  *ngIf="indexingFaild"  [value]="'Data_index_failure_details' | translate"
+                    [sizeType]="'sm'" [styleType]="'weak'" [classNames]="'pep-spacing-element pull-left flip'"
+                    (buttonClick)="errorDetailsClick()">
             </pep-button>
-            </div>
             <pep-menu class="menu pull-left flip pep-spacing-element" 
                 [items]="menuOptions" (menuItemClick)="onMenuItemClicked($event)">
             </pep-menu>
@@ -34,23 +32,22 @@
                             </h4>
                         </div>
                         <div id="fields-container">
-                            <div *ngFor="let field of fields; let i = index;" class="fieldRow" id="row_{{i}}">
-                                    <label class="pull-left flip">{{i+1}}.</label>
-                                    <pep-select [disabled]="field.default"  [showTitle]="false" [emptyOption]="false" (valueChange)="onTypeChange($event)"
-                                    [options]="all_activities_types" class="pull-left flip" [value]="field.type"></pep-select>
-                                    <pep-select [disabled]="field.default" [showTitle]="false" [emptyOption]="true"  (valueChange)="onApiNameChange($event)"
-                                    [options]="all_activities_fieldsOptions[field.type]" class="pull-left flip"  [value]="field.apiName"></pep-select>
-                                    <button mat-button *ngIf= "fields.length != 1 && !field.default" class="pep-button icon-button md strong caution ellipsis pull-left flip" (click)="deleteFieldRow(i)">
+                            <div *ngFor="let field of fields['all_activities']; let i = index;" class="fieldRow" id="row_{{i}}">
+                                <label class="pull-left flip">{{i+1}}</label>
+                                <pep-select [disabled]="field.default"  [showTitle]="false" [emptyOption]="false" (valueChange)="onTypeChange($event,i,'all_activities')"
+                                [options]="all_activities_types" class="pull-left flip" [value]="field.type"></pep-select>
+                                <pep-select [required]='!field.default && !field.apiName' [disabled]="field.default" [showTitle]="false" [emptyOption]="true"  (valueChange)="onApiNameChange($event,i,'all_activities')"
+                                [options]="all_activities_apiNames[field.type]" class="pull-left flip"  [value]="field.apiName"></pep-select>
+                                <button mat-button *ngIf= "fields['all_activities'].length != 1 && !field.default" class="pep-button icon-button md strong caution ellipsis pull-left flip" (click)="deleteFieldRow(i,'all_activities')">
                                         <mat-icon>
                                             <pep-icon name="system_bin"></pep-icon>
                                         </mat-icon>
                                     </button> 
 
                             </div>
-
-                            <pep-button  [value]="'Data_index_add' | translate" [iconName]="'number_plus'"
+                            <pep-button  [disabled]="fields['all_activities'].length == fieldsNumberLimit" [value]="'Data_index_add' | translate" [iconName]="'number_plus'"
                             [sizeType]="'sm'" [styleType]="'strong'" [classNames]="'pull-left flip'"
-                            (buttonClick)="addFieldRow()">
+                            (buttonClick)="addFieldRow('all_activities')">
                             </pep-button>  
 
                         </div>
@@ -59,7 +56,39 @@
 
             <mat-tab label="{{ 'Data_index_transaction_lines' | translate}}">
                 <ng-template matTabContent>
-                </ng-template>
+                    <div class="pepperi-border-bottom section-title">
+                        <p class="body-md narrow">
+                            {{ "Data_index_chooseFieldDescription" | translate }}
+                        </p>
+                        <h4>
+                            {{ "Data_index_fields" | translate }}
+                        </h4>
+                    </div>
+                    <div id="fields-container">
+                    
+                        <div *ngFor="let field of fields['transaction_lines']; let i = index;" class="fieldRow" id="row_{{i}}">
+                            <label class="pull-left flip">{{i+1}}</label>
+                            <pep-select [disabled]="field.default"  [showTitle]="false" [emptyOption]="false" 
+                                (valueChange)="onTypeChange($event,i,'transaction_lines')" [options]="transaction_lines_types" class="pull-left flip" [value]="field.type">
+                            </pep-select>
+                            <pep-select [required]='!field.default && !field.apiName' [disabled]="field.default" [showTitle]="false" [emptyOption]="true"  
+                                (valueChange)="onApiNameChange($event,i,'transaction_lines')" [options]="transaction_lines_apiNames[field.type]" 
+                                class="pull-left flip"  [value]="field.apiName">
+                            </pep-select>
+                            <button mat-button *ngIf= "fields['transaction_lines'].length != 1 && !field.default" class="pep-button icon-button md strong caution ellipsis pull-left flip" (click)="deleteFieldRow(i,'transaction_lines')">
+                                <mat-icon>
+                                    <pep-icon name="system_bin"></pep-icon>
+                                </mat-icon>
+                            </button> 
+                        </div>
+
+                        <pep-button [disabled]="fields['transaction_lines'].length == fieldsNumberLimit" [value]="'Data_index_add' | translate" [iconName]="'number_plus'"
+                        [sizeType]="'sm'" [styleType]="'strong'" [classNames]="'pull-left flip'"
+                        (buttonClick)="addFieldRow('transaction_lines')">
+                        </pep-button>  
+
+                    </div>
+            </ng-template>
             </mat-tab>
         </mat-tab-group>
     </div>

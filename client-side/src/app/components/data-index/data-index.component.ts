@@ -41,21 +41,22 @@ export class DataIndexComponent implements OnInit {
     indexingFaild:boolean = false;
     indexingError:string;
 
-    transaction_lines_fieldsToExport:string[];
-    all_activities_fieldsToExport:string[];
-
     all_activities_types = []
-
-    all_activities_fieldsOptions = {}
-
     transaction_lines_types = []
 
-    transaction_lines_fieldsOptions = {}
+
+    all_activities_apiNames = {}
+    transaction_lines_apiNames = {}
 
     menuOptions = []
 
-    fields = []; 
-    
+    fields = {
+        "all_activities":[],
+        "transaction_lines":[]
+    }
+
+    fieldsNumberLimit = 20;
+
     constructor(
         public dataIndexService: DataIndexService,
         private translate: TranslateService,
@@ -79,70 +80,145 @@ export class DataIndexComponent implements OnInit {
     }
     
   ngOnInit(): void {
-
-    this.uiData = this.dataIndexService.getUIData((result: any) => {
-
-        this.uiData = result;
-
-        var fields = this.uiData['Fields']; // //the fields for the dropdowns and the defaultFields
-        this.defaultFields = fields['DataIndexTypeDefaultFields'];
-        this.typesFields = fields['TypesFields'];
-
-        this.all_activities_fieldsToExport = this.uiData['all_activities_saved_fields'];
-        this.transaction_lines_fieldsToExport= this.uiData['transaction_lines_saved_fields'];
-
-
-        var progressStatus = this.uiData['ProgressData']['Status'];
-
-        this.disablePublish = progressStatus && progressStatus == 'InProgress'
-
-        this.setProgressIndicator(this.uiData['ProgressData']);
-
-        this.menuOptions = [{ key: 'delete_index', text: this.translate.instant('Data_index_delete_index')}];
-
-        this.all_activities_types = [
-            {key:"all_activities", value:this.translate.instant("Data_index_object_type_all_activities")},
-            {key:"Account", value:this.translate.instant("Data_index_object_type_Account")}
-        ]
-    
-        var transaction_activities = this.typesFields["Transaction"].concat(this.typesFields["Activity"])
-        this.all_activities_fieldsOptions = {
-            "all_activities" :this.getDistinctFieldsObj(transaction_activities),
-            "Account" : this.typesFields["Account"]
-    
-        }
-
-        this.transaction_lines_types = [
-            {key:"transaction_lines", value:this.translate.instant("Data_index_object_type_Transaction_line")},
-            {key:"Item", value:this.translate.instant("Data_index_object_type_Item")},
-            {key:"Transaction", value:this.translate.instant("Data_index_object_type_Transaction")},
-            {key:"Transaction.Account", value:this.translate.instant("Data_index_object_type_Account")}
-        ]
-    
-        this.transaction_lines_fieldsOptions = {
-            "transaction_lines": [],
-            "Item":[],
-            "Transaction":[],
-            "Transaction.Account":[]
-        }
-
-        this.fields.push({type:"Account", apiName:"Name", default:false});
-        this.fields.push({type:"all_activities", apiName:"ActionDateTime",default:true});
-        this.fields.push({type:"all_activities", apiName:"Hidden",default:false});
-
-       });
+    this.getUIData();
   }
+
+    private getUIData() {
+
+        this.uiData = this.dataIndexService.getUIData((result: any) => {
+
+            this.uiData = result;
+
+            var fields = this.uiData['Fields']; // //the fields for the dropdowns and the defaultFields
+            this.defaultFields = fields['DataIndexTypeDefaultFields'];
+            this.typesFields = fields['TypesFields'];
+
+            var progressStatus = this.uiData['ProgressData']['Status'];
+
+            this.disablePublish = progressStatus && progressStatus == 'InProgress';
+
+            this.setProgressIndicator(this.uiData['ProgressData']);
+
+            this.menuOptions = [{ key: 'delete_index', text: this.translate.instant('Data_index_delete_index') }];
+
+            this.SetAllActivitiesTabData();
+
+
+            this.SetTransactionLinesUIData();
+
+
+        });
+    }
+
+    private SetTransactionLinesUIData() {
+        this.transaction_lines_types = [
+            { key: "transaction_lines", value: this.translate.instant("Data_index_object_type_Transaction_line") },
+            { key: "Item", value: this.translate.instant("Data_index_object_type_Item") },
+            { key: "Transaction", value: this.translate.instant("Data_index_object_type_Transaction") },
+            { key: "Transaction.Account", value: this.translate.instant("Data_index_object_type_Account") }
+        ];
+
+        this.transaction_lines_apiNames = {
+            "transaction_lines": this.typesFields["transaction_lines"],
+            "Item": this.typesFields["Item"],
+            "Transaction": [],
+            "Transaction.Account": this.typesFields["Account"]
+        };
+
+        this.setTabFields("transaction_lines");
+    }
+
+    private SetAllActivitiesTabData() {
+        this.all_activities_types = [
+            { key: "all_activities", value: this.translate.instant("Data_index_object_type_all_activities") },
+            { key: "Account", value: this.translate.instant("Data_index_object_type_Account") }
+        ];
+
+        var transaction_activities_fields = this.typesFields["Transaction"].concat(this.typesFields["Activity"]);
+        this.all_activities_apiNames = {
+            "all_activities": this.getDistinctFieldsObj(transaction_activities_fields),
+            "Account": this.typesFields["Account"]
+        };
+
+        this.setTabFields("all_activities");
+    }
+
+    private setTabFields(indexType: string) {
+        this.defaultFields[indexType].forEach(field => {
+            this.addFieldToTabUIFields(field, indexType, true);
+        });
+
+        this.uiData[`${indexType}_saved_fields`].forEach(field => {
+            if (!this.defaultFields[indexType].includes(field)) { // default fields will be added separetley to the UI arr
+                this.addFieldToTabUIFields(field, indexType, false);
+            }
+        });
+    }
+
+    private addFieldToTabUIFields(field: string, indexType: string, defaultField: boolean) {
+        if (field.includes(".")) { // ref field
+            var lastDotIndex = field.lastIndexOf('.');
+            var prefix = field.substring(0, lastDotIndex);
+            var apiName = field.substring(lastDotIndex + 1);
+            if (this.typesFields[prefix]) //if not defined - the prefix is not supported in the ui
+            {
+                var fieldObj =  this.getFieldFromFieldsType(prefix, apiName);
+                if (fieldObj) // can be not defined if invalid api name somehow was entered to adal record -will not be shown and new publish will remove it
+                {
+                    this.fields[indexType].push({ type: prefix, apiName: apiName, default: defaultField });
+                }
+
+                this.handleSpecialCases(indexType, prefix, fieldObj); 
+            }
+        }
+        else {
+
+            if (this.getFieldFromFieldsType(indexType, field)) // can be not defined or enpty array if invalid api name somehow was entered to adal record -will not be shown and new publish will remove it
+            {
+                this.fields[indexType].push({ type: indexType, apiName: field, default: defaultField });
+            }
+
+        }
+    }
+
+    private handleSpecialCases(indexType: string, prefix: string, fieldObj: any) {
+        if (indexType == "transaction_lines" && prefix == 'Transaction') {
+            this.transaction_lines_apiNames["Transaction"].push(fieldObj);
+        }
+    }
+
+    private getFieldFromFieldsType(type: string, apiName: string) {
+        var res;
+        if(type == "all_activities"){
+             res = this.getFieldObj("Transaction", apiName);
+             if(!res || res.length == 0)
+                res = this.getFieldObj("Activity", apiName);
+        }
+        else
+        {
+            res = this.typesFields[type].filter(field => {
+                return field.key === apiName;
+            });
+        }
+        return res && res.length > 0? res[0]:undefined;
+    }
+
+    private getFieldObj(type: string, apiName: string){
+        return this.typesFields[type].filter(field => {
+            return field.key === apiName;
+        });
+    }
 
     private setProgressIndicator(progressData: any) {
         var progressStatus=progressData["Status"]
         this.progressIndicator = "";
         if (progressData["RunTime"]) {
-            this.progressIndicator = `The process is scheduled to run at: ${progressData["RunTime"]}`;
+            this.progressIndicator = `${this.translate.instant('Data_index_processScheduledToRunAt')}: ${progressData["RunTime"]}`;
         }
         else if (progressStatus) {
 
             if (progressStatus == "Failure") {
-                this.progressIndicator = `Failed to publish the data`;
+                this.progressIndicator = this.translate.instant('Data_index_failedToPublish');
                 this.indexingFaild = true;
                 this.indexingError = progressData["Message"];
             }
@@ -175,47 +251,6 @@ export class DataIndexComponent implements OnInit {
         }
 
         return distinctFields;
-    }
-
-    addFieldRow(){
-        var self = this;
-        self.fields.push({type:"all_activities", apiName:null, default:false});
-    }
-
-    deleteFieldRow(rowNum){
-        var self = this;
-        self.fields.splice(rowNum,1);
-    }
-
-    onTypeChange(event){
-        alert(event.value);
-    }
-
-    onApiNameChange(event){
-        alert(event.value);
-    }
-
-    publishClicked(){
-        //get the fields to save
-
-        //open dialog
-        const dialogRef = this.dataIndexService.openPublishDialog(PublishDialogComponent);
-        dialogRef.afterClosed().subscribe(dialogResult => {
-            var data = {
-                all_activities_fields: this.all_activities_fieldsToExport,
-                transaction_lines_fields: this.transaction_lines_fieldsToExport,
-                RunTime:null
-            };
-            if(dialogResult.runType == "2"){ // type 2 is run at option of the publish
-                //add run time to saved object
-                data.RunTime = dialogResult.runTime;
-            }
-
-            //this.dataIndexService.publish(data,()=>{})
-            
-        });
-
-
     }
 
     errorDetailsClick(){
@@ -258,5 +293,111 @@ export class DataIndexComponent implements OnInit {
             }
         }
     }
+
+    addFieldRow(tab){
+        var self = this;
+        self.fields[tab].push({type:tab, apiName:null, default:false})
+
+    }
+
+    deleteFieldRow(rowNum,tab){
+        var self = this;
+        self.fields[tab].splice(rowNum,1);
+    }
+
+    onTypeChange(event,rowNum, tab){
+        var self = this;
+        self.fields[tab][rowNum].type = event.value;
+        self.fields[tab][rowNum].apiName = null;
+    }
+
+    onApiNameChange(event,rowNum, tab){
+        var self = this;       
+        var apiName = event.value; 
+        self.fields[tab][rowNum].apiName = apiName;
+        switch(tab)
+        {
+            // add field to Transaction api names list for Transaction lines tab
+            case "all_activities":
+                if(self.fields["all_activities"][rowNum].type == "all_activities"){
+                    var res = self.typesFields["Transaction"].filter(field => {
+                        return field.key === apiName;
+                    })
+                    if(res.length > 0) // it is transaction field - add to transaction lines transaction api names
+                    {
+                        self.transaction_lines_apiNames['Transaction'].push(res[0]);
+                    };
+                }  
+                break
+        }
+    }
+
+    publishClicked(){
+        //get the fields to save
+        var data = {
+            all_activities_fields: this.getIndexTypeFieldsToExport("all_activities"),
+            transaction_lines_fields: this.getIndexTypeFieldsToExport("transaction_lines"),
+            RunTime:null
+        };
+
+        //open dialog
+        const dialogRef = this.dataIndexService.openPublishDialog(PublishDialogComponent);
+        dialogRef.afterClosed().subscribe(dialogResult => {
+
+            if(dialogResult && dialogResult.runType == "2"){ // type 2 is 'run at' option of the publish
+                //add run time to saved object
+                data.RunTime = dialogResult.runTime;
+            }
+
+            this.dataIndexService.publish(data,(result)=>{
+                //refresh the UI
+                this.cleanUIData();
+                this.getUIData();
+            })
+            
+        });
+
+
+    }
+
+    private cleanUIData() {
+        this.uiData = "";
+        this.disablePublish = false;
+        this.progressIndicator = "";
+        this.indexingFaild = false;
+        this.indexingError = "";
+
+        this.all_activities_types = [];
+        this.transaction_lines_types = [];
+
+
+        this.all_activities_apiNames = {};
+        this.transaction_lines_apiNames = {};
+
+        this.menuOptions = [];
+
+        this.fields = {
+            "all_activities": [],
+            "transaction_lines": []
+        };
+    }
+
+    private getIndexTypeFieldsToExport(indexType: string) {
+        var fieldsToExport : string[] = [];
+        this.fields[indexType].forEach(fieldObj => {
+            var field = fieldObj.apiName;
+            if (field != null) {
+                if (fieldObj.type != indexType) { // I made the time to be always the full prefix - Account in all activities and Transaction.Account in transaction_lines
+                    field = `${fieldObj.type}.${field}`;
+                }
+                fieldsToExport.push(field);
+            }
+        });
+
+        return fieldsToExport;
+
+    }
+
+
     
 }

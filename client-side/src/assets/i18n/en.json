@@ -22,7 +22,7 @@
     "Data_index_object_type_Account": "Account",
     "Data_index_object_type_Item": "Item",
     "Data_index_object_type_Transaction": "Transaction",
-    "Data_index_object_type_Transaction_line": "Transaction_line",
+    "Data_index_object_type_Transaction_line": "Transaction line",
     "Data_index_Confirm": "Confirm",
     "Data_index_Cancel":"Cancel",
     "Data_index_OK":"OK"
