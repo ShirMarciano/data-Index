@@ -37,9 +37,9 @@
                         
                             <div *ngFor="let field of fields; let i = index;" class="fieldRow" id="row_{{i}}">
                                     <label class="pull-left flip">{{i+1}}.</label>
-                                    <pep-select  [showTitle]="false" [emptyOption]="false" (valueChanged)="onTypeChange($event)"
+                                    <pep-select [disabled]="field.default"  [showTitle]="false" [emptyOption]="false" (valueChanged)="onTypeChange($event)"
                                     [options]="all_activities_types" class="pull-left flip" [value]="field.type"></pep-select>
-                                    <pep-select  [showTitle]="false" [emptyOption]="true"  (valueChanged)="onApiNameChange($event)"
+                                    <pep-select [disabled]="field.default" [showTitle]="false" [emptyOption]="true"  (valueChanged)="onApiNameChange($event)"
                                     [options]="all_activities_fieldsOptions[field.type]" class="pull-left flip"  [value]="field.apiName"></pep-select>
                                     <mat-icon *ngIf= "fields.length != 1 && !field.default" class="pull-left flip" (click)="deleteFieldRow(i)">
                                         <pep-icon name="system_bin"></pep-icon>
