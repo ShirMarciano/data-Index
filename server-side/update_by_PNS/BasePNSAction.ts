@@ -16,7 +16,7 @@ export abstract class BasePNSAction {
         this.client = inClient;
         this.papiClient = CommonMethods.getPapiClient(this.client);
         this.dataIndexType = inDataIndexType;
-        this.pnsObjects = inPnsObject["Message"]["Document"]["ObjectList"];
+        this.pnsObjects = inPnsObject["Message"]["ModifiedObjects"];
     }
 
     async execute(){   
@@ -27,14 +27,14 @@ export abstract class BasePNSAction {
         var UUIDs: string[] = [];
         this.pnsObjects.forEach(pnsObject => {
 
-            var updatedFields = pnsObject["UpdatedFields"];
+            var updatedFields = pnsObject["ModifiedFields"];
 
             for (var i = 0; i < updatedFields.length; i++) 
             { 
                 //check the fields in pnsObject – if at least one is field we subscribed to (on the SubscribedFields) – save the row UUID on a side list
                 if (subscribedFields.includes(updatedFields[i]["FieldID"])) 
                 {
-                    UUIDs.push(pnsObject["UUID"]);
+                    UUIDs.push(pnsObject["ObjectKey"]);
                     break;
                 }
             }

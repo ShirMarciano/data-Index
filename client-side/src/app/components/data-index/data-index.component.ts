@@ -115,14 +115,18 @@ export class DataIndexComponent implements OnInit {
             { key: "transaction_lines", value: this.translate.instant("Data_index_object_type_Transaction_line") },
             { key: "Item", value: this.translate.instant("Data_index_object_type_Item") },
             { key: "Transaction", value: this.translate.instant("Data_index_object_type_Transaction") },
-            { key: "Transaction.Account", value: this.translate.instant("Data_index_object_type_Account") }
+            { key: "Transaction.Account", value: this.translate.instant("Data_index_object_type_Account") },
+            { key: "Transaction.Agent", value: this.translate.instant("Data_index_object_type_Agent") }
+
         ];
 
         this.transaction_lines_apiNames = {
             "transaction_lines": this.typesFields["transaction_lines"],
             "Item": this.typesFields["Item"],
             "Transaction": [],
-            "Transaction.Account": this.typesFields["Account"]
+            "Transaction.Account": this.typesFields["Account"],
+            "Transaction.Agent": this.typesFields["Agent"]
+
         };
 
         this.setTabFields("transaction_lines");
@@ -131,13 +135,16 @@ export class DataIndexComponent implements OnInit {
     private SetAllActivitiesTabData() {
         this.all_activities_types = [
             { key: "all_activities", value: this.translate.instant("Data_index_object_type_all_activities") },
-            { key: "Account", value: this.translate.instant("Data_index_object_type_Account") }
+            { key: "Account", value: this.translate.instant("Data_index_object_type_Account") },
+            { key: "Agent", value: this.translate.instant("Data_index_object_type_Agent") }
+
         ];
 
         var transaction_activities_fields = this.typesFields["Transaction"].concat(this.typesFields["Activity"]);
         this.all_activities_apiNames = {
             "all_activities": this.getDistinctFieldsObj(transaction_activities_fields),
-            "Account": this.typesFields["Account"]
+            "Account": this.typesFields["Account"] ,
+            "Agent": this.typesFields["Agent"]
         };
 
         this.setTabFields("all_activities");
@@ -211,7 +218,7 @@ export class DataIndexComponent implements OnInit {
 
     private setProgressIndicator(progressData: any) {
         var progressStatus=progressData["Status"]
-        this.progressIndicator = "";
+        this.progressIndicator = this.translate.instant("Data_index_has_no_data");
         if (progressData["RunTime"]) {
             this.progressIndicator = `${this.translate.instant('Data_index_processScheduledToRunAt')}: ${progressData["RunTime"]}`;
         }
@@ -279,7 +286,10 @@ export class DataIndexComponent implements OnInit {
                     () =>{ 
                         this.dataIndexService.deleteIndex((res)=>{
                             if(res["success"] == true){
-                                this.progressIndicator="";
+                                //refresh the UI
+                                this.cleanUIData();
+                                this.getUIData();
+                               
                             }
                         });
                        
@@ -343,17 +353,20 @@ export class DataIndexComponent implements OnInit {
         //open dialog
         const dialogRef = this.dataIndexService.openPublishDialog(PublishDialogComponent);
         dialogRef.afterClosed().subscribe(dialogResult => {
-
-            if(dialogResult && dialogResult.runType == "2"){ // type 2 is 'run at' option of the publish
-                //add run time to saved object
-                data.RunTime = dialogResult.runTime;
+            if(dialogResult)
+            {
+                if(dialogResult.runType == "2"){ // type 2 is 'run at' option of the publish
+                    //add run time to saved object
+                    data.RunTime = dialogResult.runTime;
+                }
+    
+                this.dataIndexService.publish(data,(result)=>{
+                    //refresh the UI
+                    this.cleanUIData();
+                    this.getUIData();
+                })
             }
-
-            this.dataIndexService.publish(data,(result)=>{
-                //refresh the UI
-                this.cleanUIData();
-                this.getUIData();
-            })
+            
             
         });
 
@@ -386,8 +399,8 @@ export class DataIndexComponent implements OnInit {
         var fieldsToExport : string[] = [];
         this.fields[indexType].forEach(fieldObj => {
             var field = fieldObj.apiName;
-            if (field != null) {
-                if (fieldObj.type != indexType) { // I made the time to be always the full prefix - Account in all activities and Transaction.Account in transaction_lines
+            if (field != null) { // igmoe unselected api names in the UI
+                if (fieldObj.type != indexType) { // I made the key to be always the full prefix - Account in all activities and Transaction.Account in transaction_lines
                     field = `${fieldObj.type}.${field}`;
                 }
                 fieldsToExport.push(field);

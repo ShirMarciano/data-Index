@@ -15,19 +15,19 @@ export async function get_ui_data(client: Client, request: Request) {//get the s
     var UI_adalRecord = await CommonMethods.getDataIndexUIAdalRecord(papiClient,client);
 
     var ui_data = {
-        Fields: await getFields(papiClient), //the fields for the dropdowns and the defaultFields
+        Fields: await getFields(papiClient), //the fields for the dropdowns and the defaultFields - the format = > {TypesFields: {Transaction:[],Account:[], transaction_lines:[]....}, DataIndexTypeDefaultFields: {all_activities:[], transaction_lines:[]}},
         all_activities_saved_fields : UI_adalRecord["all_activities_fields"]?  UI_adalRecord["all_activities_fields"] :[],
         transaction_lines_saved_fields: UI_adalRecord["transaction_lines_fields"] ? UI_adalRecord["transaction_lines_fields"] :[],
         ProgressData: {}
     }
 
-    if(UI_adalRecord["all_activities_fields"]) // if not exist - it is the first time the get was called  
+    if(UI_adalRecord["all_activities_fields"]) // if not exist - it is probably the first time the get was called  
     {
         if(UI_adalRecord["RunDateTime"])
         {// if we have run time - we need to check if it is in the future  and if so - the progress indicator should be the time of the run
             var date = new Date(UI_adalRecord["RunDateTime"]);
             var nowDate = new Date();
-            if(date > nowDate) // will run in the futur
+            if(date > nowDate) // will run in the future -- need to show in the progress indicator
             {
                 var hour = date.getHours() == 0 ? 24 :date.getHours();
                 var minutes = date.getMinutes() == 0 ? '00' :date.getHours()+'';
@@ -49,7 +49,7 @@ export async function get_ui_data(client: Client, request: Request) {//get the s
 
 async function getFields(papiClient: PapiClient) { // get the needed fields for the drop downs
     
-    var types = ["Transaction","Activity","Account","transaction_lines","Item",]
+    var types = ["Transaction","Activity","Account","transaction_lines","Item","Agent"]
 
     var typeToFields:any = { }
 
@@ -63,12 +63,10 @@ async function getFields(papiClient: PapiClient) { // get the needed fields for 
         fields.forEach(fieldObj => {
             if (checkIfFieldIsValid(fieldObj,objectType)) //GuidReferenceType
             {
-                fieldsObjects.push({key:fieldObj.FieldID, value:fieldObj.Label});
+                fieldsObjects.push({key:fieldObj.FieldID, value:fieldObj.Label}); // the key val is the format of the pwp-select data of the UI
             }
         });
         
-        //fieldsObjects = CommonMethods.getDistinctFieldsObj(fieldsObjects)
-
         typeToFields[objectType] = fieldsObjects;
     }
 
@@ -96,7 +94,7 @@ function checkIfFieldIsValid(field:ApiFieldObject,objectType:string)
         valid = !isInIgnoreList(field.FieldID);
     }
 
-    // reference fields doesnt come in meta data fields api call so no if case on it
+    // reference fields doesnt come in meta data fields api call so no 'if' case on it
     return valid;
 
 }
@@ -166,7 +164,7 @@ async function getRebuildProgressData(papiClient: PapiClient, client: Client, ui
 
     var transactionLinesProgress = {
         Status: "",
-        Precentag: NaN
+        Precentag: 0
     };
 
     if (allActivitiesPolling["Status"] == "Success") {
@@ -191,13 +189,13 @@ async function getRebuildProgressData(papiClient: PapiClient, client: Client, ui
                 Precentag: Math.round((parseInt(transactionLinesPolling["Current"]) / parseInt(transactionLinesPolling["Count"])) * 100)
             };
         
-        ui_data.ProgressData["Status"] = transactionLinesPolling["Status"] != "" ? transactionLinesPolling["Status"] : "InProgress";
+        ui_data.ProgressData["Status"] = transactionLinesPolling["Status"] != "" ? transactionLinesPolling["Status"] : "InProgress"; //general status for both types together
         ui_data.ProgressData["Message"] = transactionLinesPolling["Message"];
 
     }
 
-    else {
-        ui_data.ProgressData["Status"] = allActivitiesPolling["Status"];
+    else { 
+        ui_data.ProgressData["Status"] = allActivitiesPolling["Status"]; //general status for both types together
         ui_data.ProgressData["Message"] = allActivitiesPolling["Message"];
     }
 

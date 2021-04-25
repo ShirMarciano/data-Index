@@ -70,7 +70,7 @@ export  class CommonMethods{
                 break;
             case "Creator":
             case "Agent":
-                APiResources= ["users","contacts"]
+                APiResources= ["users","contacts"] //users must be the first alwasys - when I get the fields for creator/agent I need only from users resource
                 break;
             case "ContactPerson":
                 APiResources= ["contacts"]

@@ -48,19 +48,21 @@ export class PNSSubscribeHelper{
                 "X-Pepperi-OwnerID": this.client.AddonUUID
             };
             var subscribeDetails = indexTypeSubscribeData["SubscribeDetails"];
-            var subscribeURL = "/notifications/subscriptions";
+            var subscribeURL = "/notification/subscriptions";
 
             //subscribe for insert of index type rows
             var body = {
+                AddonUUID:this.client.AddonUUID,
+                Name: `${subscribeDetails["Insert"]["AddonPath"]}_${subscribeDetails["Insert"]["FunctionName"]}`,// name=file_functionName
+                Type: "data",
                 FilterPolicy: {
                         Resource: this.dataIndexType == "all_activities"? ["actvities","transactions"] : [this.dataIndexType],
-                        Type:["data"],
-                        ActionType:["insert"]
+                        ActionType:["insert"],
+                        AddonUUID:["00000000-0000-0000-0000-00000000c07e"] // to get only nucleus changes
                 },
-                AddonPath:subscribeDetails["Insert"]["AddonPath"],
-                FunctionName:subscribeDetails["Insert"]["FunctionName"]
-
+                AddonRelativeURL:`${subscribeDetails["Insert"]["AddonPath"]}/${subscribeDetails["Insert"]["FunctionName"]}` 
             }
+
             await this.papiClient.post(subscribeURL, body, headers);
 
             //subscribe for updates 
@@ -68,15 +70,15 @@ export class PNSSubscribeHelper{
 
             //updates of Hidden fields
             body.FilterPolicy["UpdatedFields"] = ["Hidden"];
-            body.AddonPath = subscribeDetails["Hidden_Update"]["AddonPath"],
-            body.FunctionName = subscribeDetails["Hidden_Update"]["FunctionName"]
+            body.Name = `${subscribeDetails["Hidden_Update"]["AddonPath"]}_${subscribeDetails["Hidden_Update"]["FunctionName"]}`;// name=file_functionName
+            body.AddonRelativeURL = `${subscribeDetails["Hidden_Update"]["AddonPath"]}/${subscribeDetails["Hidden_Update"]["FunctionName"]}`
             
             await this.papiClient.post(subscribeURL, body, headers);
 
             //update of index type data fields
             body.FilterPolicy["UpdatedFields"] = indexTypeSubscribeData["Fields"];
-            body.AddonPath = subscribeDetails["Update"]["AddonPath"],
-            body.FunctionName = subscribeDetails["Update"]["FunctionName"]
+            body.Name = `${subscribeDetails["Update"]["AddonPath"]}_${subscribeDetails["Update"]["FunctionName"]}`;// name=file_functionName
+            body.AddonRelativeURL = `${subscribeDetails["Update"]["AddonPath"]}/${subscribeDetails["Update"]["FunctionName"]}`
 
             await this.papiClient.post(subscribeURL, body, headers);
 
@@ -89,7 +91,6 @@ export class PNSSubscribeHelper{
             "X-Pepperi-SecretKey": this.client.AddonSecretKey,
             "X-Pepperi-OwnerID": this.client.AddonUUID
         };
-        var subscribeURL = "/notifications/subscriptions";
 
         if(referenceTypesSubscribeData)
         {
@@ -103,17 +104,21 @@ export class PNSSubscribeHelper{
                 var fieldsToSubscribe = CommonMethods.collectFieldsToSubscribeToOnTheApiResource(fieldsData);
 
                 //subscribe for update of reference type rows
+                var name = `${subscribeDetails["AddonPath"]}_${subscribeDetails["FunctionName"]}`; // name=file_functionName
                 var body = {
+                    AddonUUID:this.client.AddonUUID,
+                    Name:name,
+                    Type:"data",
                     FilterPolicy: {
-                            Resource: [apiResourceType],
-                            Type:["data"],
-                            UpdatedFields:fieldsToSubscribe,
-                            ActionType:["update"]
+                        Resource: [apiResourceType],
+                        UpdatedFields:fieldsToSubscribe,
+                        ActionType:["update"],
+                        AddonUUID:["00000000-0000-0000-0000-00000000c07e"]// to get only nucleus changes
                     },
-                    AddonPath:subscribeDetails["AddonPath"],
-                    FunctionName:subscribeDetails["FunctionName"]
+                    AddonRelativeURL:`${subscribeDetails["AddonPath"]}/${subscribeDetails["FunctionName"]}` 
                 }
-                await this.papiClient.post(subscribeURL, body, headers);
+    
+                await this.papiClient.post("/notification/subscriptions", body, headers);
             } 
         }
     }
@@ -130,16 +135,13 @@ export class PNSSubscribeHelper{
     private async unsubscribeIndexType(indexTypeSubscribeData: any) {
         if(indexTypeSubscribeData){
 
-            var headers = {
-                "X-Pepperi-SecretKey": this.client.AddonSecretKey,
-                "X-Pepperi-OwnerID": this.client.AddonUUID
-            };
             var subscribeDetails = indexTypeSubscribeData["SubscribeDetails"];
-            var unSubscribeURL = "/notifications/unsubscriptions";
+
             try{
 
                 for(var subscription in subscribeDetails){
-                    await this.papiClient.post(unSubscribeURL, subscribeDetails[subscription], headers);
+                    var subscribeData = subscribeDetails[subscription];
+                    await this.unsubscribe(`${subscribeData["AddonPath"]}_${subscribeData["FunctionName"]}`);// name=file_functionName
                 }
 
             }
@@ -147,27 +149,41 @@ export class PNSSubscribeHelper{
             {
                 console.log(`Error in unsubscribeIndexType: ${JSON.stringify(e)}`)
             }
-           
-            
         }
     } 
 
     private async unsubscribeReferenceTypes(referenceSubscribeData: any) {
-        if(referenceSubscribeData){
-            var headers = {
-                "X-Pepperi-SecretKey": this.client.AddonSecretKey,
-                "X-Pepperi-OwnerID": this.client.AddonUUID
-            };
-
-            for(var refType in referenceSubscribeData)
+        if(referenceSubscribeData)
+        {
+            try
             {
-                var apiTypeData = referenceSubscribeData[refType];
-                var subscribeDetails = apiTypeData["SubscribeDetails"];
-                var unSubscribeURL = "/notifications/unsubscriptions";
-                await this.papiClient.post(unSubscribeURL, subscribeDetails, headers);
+                for(var refType in referenceSubscribeData)
+                {
+                    var apiTypeData = referenceSubscribeData[refType];
+                    var subscribeDetails = apiTypeData["SubscribeDetails"];
+                    await this.unsubscribe(`${subscribeDetails["AddonPath"]}_${subscribeDetails["FunctionName"]}`);// name=file_functionName
+                }
+            }
+            catch(e)
+            {
+                console.log(`Error in unsubscribeIndexType: ${JSON.stringify(e)}`)
             }
         }
     } 
+
+    private async unsubscribe(name:string) {
+        var headers = {
+            "X-Pepperi-SecretKey": this.client.AddonSecretKey,
+            "X-Pepperi-OwnerID": this.client.AddonUUID
+        };
+
+        var body = {
+            "AddonUUID": this.client.AddonUUID,
+            "Name": name,
+            "Hidden": true
+        };
+        await this.papiClient.post("/notification/subscriptions", body, headers);
+    }
 
     /* End subscribe and unsubscibe private methods */ 
 

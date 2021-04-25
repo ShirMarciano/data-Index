@@ -10,6 +10,7 @@
     "Data_index_publish_run_at":"Run at",
     "Data_index_delete_index": "Delete the indexed data",
     "Data_index_delete_body": "Are you sure you want to delete all the indexed data?",
+    "Data_index_has_no_data": "The data index is empty",
     "Data_index_fields": "Fields",
     "Data_index_chooseFieldDescription": "Define the fields which be indexed",
     "Data_index": "Data Index",
@@ -23,7 +24,10 @@
     "Data_index_object_type_Item": "Item",
     "Data_index_object_type_Transaction": "Transaction",
     "Data_index_object_type_Transaction_line": "Transaction line",
+    "Data_index_object_type_Agent": "Agent",
     "Data_index_Confirm": "Confirm",
     "Data_index_Cancel":"Cancel",
     "Data_index_OK":"OK"
+
+
 }
