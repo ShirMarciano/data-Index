@@ -282,6 +282,9 @@ export async function publish(client: Client, request: Request) {
             };
         }
         codeJob = await papiClient.codeJobs.upsert(codeJob);
+
+        console.log(`Index rebuild - setting the publish job to run at ${date}, codeJOB UUID = ${codeJob.UUID}`);
+
     }
     else // run now
     {
