@@ -21,7 +21,7 @@ export abstract class DataIndexTypeHiddenUpdate extends BasePNSAction {
                 var fieldsToExport : string[] = adalRecord["RebuildData"]["FieldsToExport"];
                 if(fieldsToExport)
                 {
-                    var UUIDs : string[] = this.pnsObjects.map(a => a["UUID"]);
+                    var UUIDs : string[] = this.pnsObjects.map(a => a["ObjectKey"]);
                     //Get from the api all the rows objects by the relevant UUIDs
                     var res = await this.getDataFromApi(UUIDs, fieldsToExport,this.dataIndexType);
                     
