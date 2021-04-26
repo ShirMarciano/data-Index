@@ -17,6 +17,10 @@ export abstract class BasePNSAction {
         this.papiClient = CommonMethods.getPapiClient(this.client);
         this.dataIndexType = inDataIndexType;
         this.pnsObjects = inPnsObject["Message"]["ModifiedObjects"];
+
+        console.log(`inPnsObject ${JSON.stringify(inPnsObject)}`)
+        console.log(`PnsObjects ${JSON.stringify(this.pnsObjects)}`)
+
     }
 
     async execute(){   

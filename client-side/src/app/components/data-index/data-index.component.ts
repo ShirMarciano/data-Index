@@ -95,7 +95,7 @@ export class DataIndexComponent implements OnInit {
 
             var progressStatus = this.uiData['ProgressData']['Status'];
 
-            this.disablePublish = progressStatus && progressStatus == 'InProgress';
+            this.disablePublish = progressStatus == 'InProgress';
 
             this.setProgressIndicator(this.uiData['ProgressData']);
 
@@ -103,9 +103,7 @@ export class DataIndexComponent implements OnInit {
 
             this.SetAllActivitiesTabData();
 
-
             this.SetTransactionLinesUIData();
-
 
         });
     }
@@ -166,10 +164,16 @@ export class DataIndexComponent implements OnInit {
         if (field.includes(".")) { // ref field
             var lastDotIndex = field.lastIndexOf('.');
             var prefix = field.substring(0, lastDotIndex);
+            var objectType = prefix;
+
+            if(prefix.includes(".")){// e.g Transaction.Agent
+                objectType = prefix.substring(prefix.lastIndexOf('.')+1) // take the Agent
+            } 
+
             var apiName = field.substring(lastDotIndex + 1);
-            if (this.typesFields[prefix]) //if not defined - the prefix is not supported in the ui
+            if (this.typesFields[objectType]) //if not defined - the prefix is not supported in the ui
             {
-                var fieldObj =  this.getFieldFromFieldsType(prefix, apiName);
+                var fieldObj =  this.getFieldFromFieldsType(objectType, apiName);
                 if (fieldObj) // can be not defined if invalid api name somehow was entered to adal record -will not be shown and new publish will remove it
                 {
                     this.fields[indexType].push({ type: prefix, apiName: apiName, default: defaultField });
@@ -217,8 +221,8 @@ export class DataIndexComponent implements OnInit {
     }
 
     private setProgressIndicator(progressData: any) {
-        var progressStatus=progressData["Status"]
-        this.progressIndicator = this.translate.instant("Data_index_has_no_data");
+        var progressStatus = progressData["Status"]
+        this.progressIndicator = "";
         if (progressData["RunTime"]) {
             this.progressIndicator = `${this.translate.instant('Data_index_processScheduledToRunAt')}: ${progressData["RunTime"]}`;
         }
@@ -231,13 +235,25 @@ export class DataIndexComponent implements OnInit {
             }
             else
             {
-                var alPrecentage = progressData["all_activities_progress"]["Precentag"];
-                alPrecentage = alPrecentage != "" && alPrecentage != null? alPrecentage : 0;
-                var tlPrecentage = progressData["transaction_lines_progress"]["Precentag"];
-                tlPrecentage = tlPrecentage != "" && tlPrecentage != null  ? tlPrecentage : 0;
+                var alProgressData = progressData["all_activities_progress"];
+                if(alProgressData["Status"] == "InProgress") //DI-18047 -  When exporting the Activities/Transactions, then the progress will show only the Transaction percentage. (it will not show '0% of Lines')
+                {
+                    var alPrecentage = progressData["all_activities_progress"]["Precentag"];
+                    alPrecentage = alPrecentage != "" && alPrecentage != null? alPrecentage : 0;
+                    this.progressIndicator =  `${ this.translate.instant('Data_index_processing_all_activities')} (${alPrecentage}% ${this.translate.instant('Data_index_completed')})`;
+                }
+                else if(alProgressData["Status"] == "Success") //DI-18047 -  When the Activities/Transactions export is done and the Lines are exported, then the progress will show only the Lines percentage. (it will not show '100% of Transactions')
+                {
+                    var tlProgressData = progressData["transaction_lines_progress"];
+                    alPrecentage = alPrecentage != "" && alPrecentage != null? alPrecentage : 0;
 
-                this.progressIndicator = `Activities & Transactions indexing ${alPrecentage}% completed, Transaction lines indexing ${tlPrecentage}% completed `;
-
+                    if(tlProgressData["Status"] == "" || tlProgressData["Status"] == "InProgress")
+                    {
+                        var tlPrecentage = progressData["transaction_lines_progress"]["Precentag"];
+                        tlPrecentage = tlPrecentage != "" && tlPrecentage != null  ? tlPrecentage : 0;
+                        this.progressIndicator =  `${ this.translate.instant('Data_index_processing_transaction_lines')} (${tlPrecentage}% ${this.translate.instant('Data_index_completed')})`;
+                    }
+                }
             }
         }
     }
@@ -274,22 +290,26 @@ export class DataIndexComponent implements OnInit {
         switch (event.source.key) {
             case 'delete_index': {
                 this.dataIndexService.openDialog(
-                    this.translate.instant(
-                        "Data_index_delete_index"
-                    ),
-                    this.translate.instant(
-                        "Data_index_delete_body"
-                    ),
-                    this.translate.instant(
-                        "Confirm"
-                    ),
+                    this.translate.instant("Data_index_delete_index"),
+                    this.translate.instant("Data_index_delete_body"),
+                    this.translate.instant("Data_index_Confirm"),
                     () =>{ 
                         this.dataIndexService.deleteIndex((res)=>{
                             if(res["success"] == true){
-                                //refresh the UI
-                                this.cleanUIData();
-                                this.getUIData();
-                               
+
+                                var message = res["success"] == true ? this.translate.instant("Data_index_delete_succeded") : res["resultObject"]["Message"];
+
+                                this.dataIndexService.openDialog(
+                                    this.translate.instant("Data_index_delete_index"),
+                                    message,
+                                    this.translate.instant("Data_index_OK"),
+                                    () =>{ 
+                                        //refresh the UI
+                                            this.cleanUIData();
+                                            this.getUIData();
+                                        }, 
+                                    false
+                                    );
                             }
                         });
                        
@@ -341,6 +361,8 @@ export class DataIndexComponent implements OnInit {
                 break
         }
     }
+
+    private delay = true;
 
     publishClicked(){
         //get the fields to save

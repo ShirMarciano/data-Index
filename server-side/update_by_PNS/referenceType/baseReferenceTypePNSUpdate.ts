@@ -220,12 +220,12 @@ export class baseReferenceTypePNSUpdate extends BasePNSAction {
     public collectUUIDsOfObjectsWithAtLeastOneSubscribedFieldsUpdate(subscribedFields: string[], UUIDs: string[]) {
         this.pnsObjects.forEach(pnsObject => {
 
-            var updatedFields = pnsObject["UpdatedFields"];
+            var updatedFields = pnsObject["ModifiedFields"];
 
             for (var i = 0; i < updatedFields.length; i++) { //check the fields in pnsObject – if at least one is field we subscribed to (on the SubscribedFields) – save the row UUID on a side list
 
                 if (subscribedFields.includes(updatedFields[i]["FieldID"])) {
-                    UUIDs.push(pnsObject["UUID"]);
+                    UUIDs.push(pnsObject["ObjectKey"]);
                     break;
                 }
             }

@@ -11,7 +11,7 @@
             <pep-menu class="menu pull-left flip pep-spacing-element" 
                 [items]="menuOptions" (menuItemClick)="onMenuItemClicked($event)">
             </pep-menu>
-            <pep-button  [value]="'Data_index_publish' | translate"
+            <pep-button [disabled] = "disablePublish" [value]="'Data_index_publish' | translate"
                 [sizeType]="'md'" [styleType]="'strong'" [classNames]="'pep-spacing-element pull-left flip'"
                 (buttonClick)="publishClicked()">
         </pep-button> 

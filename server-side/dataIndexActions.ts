@@ -121,9 +121,9 @@ export  class DataIndexActions{
         var codeJobUUID = this.client["CodeJobUUID"] ? this.client["CodeJobUUID"] : adalRecord["PollingCodeJobUUID"];
 
         if (codeJobUUID) { //unscheduld the codeJob
-            var codeJob = await this.papiClient.codeJobs.uuid(codeJobUUID).find();
+            var codeJob = await this.papiClient.codeJobs.upsert({ UUID: codeJobUUID, IsScheduled: false, CodeJobName: `${this.dataIndexType} rebuild polling code job` });
+            console.log(`Setting code job ${codeJobUUID} with IsScheduled: false results: ${JSON.stringify(codeJob)}`)
 
-            await this.papiClient.codeJobs.upsert({ UUID: codeJobUUID, IsScheduled: false, CodeJobName: `${this.dataIndexType} rebuild polling code job` });
         }
     }
 
@@ -206,6 +206,7 @@ export  class DataIndexActions{
             console.log(`Create new code job ${codeJobName} with function '${functionName}' result: ${JSON.stringify(codeJob)}`)
 
         }
+        
         return codeJob;
     }
 

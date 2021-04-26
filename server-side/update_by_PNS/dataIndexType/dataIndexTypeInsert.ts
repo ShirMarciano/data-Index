@@ -6,7 +6,7 @@ export class DataIndexTypeInsert extends BaseDataIndexTypePNSAction{
     getUUIDs(pnsObjects: any[],adalRecord: AddonData): string[] {
         var UUIDs : string[] = [];
         pnsObjects.forEach(pnsObject => {
-            UUIDs.push(pnsObject["UUID"]);
+            UUIDs.push(pnsObject["ObjectKey"]);
         });    
 
         return UUIDs;

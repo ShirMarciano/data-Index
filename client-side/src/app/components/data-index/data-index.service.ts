@@ -52,7 +52,7 @@ export class DataIndexService {
         this.addonService.postAddonApiCall(this.pluginUUID,"data_index_ui_api","delete_index").subscribe(res => successFunc(res), err => errorFunc(err));
     }
 
-    openDialog(title: string, content: string, buttonText?:string,confirmCallback?: any) {
+    openDialog(title: string, content: string, buttonText?:string, confirmCallback?: any, showClose:boolean = true) {
         var actionButtons:PepDialogActionButton[] = []
         if(buttonText)
             actionButtons.push( {
@@ -66,7 +66,7 @@ export class DataIndexService {
             content: content,
             actionButtons: actionButtons,
             type: "custom",
-            showClose: true,
+            showClose: showClose,
         });
         this.dialogService.openDefaultDialog(dialogData);
     }

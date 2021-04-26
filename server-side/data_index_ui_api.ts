@@ -30,21 +30,17 @@ export async function get_ui_data(client: Client, request: Request) {//get the s
             if(date > nowDate) // will run in the future -- need to show in the progress indicator
             {
                 var hour = date.getHours() == 0 ? 24 :date.getHours();
-                var minutes = date.getMinutes() == 0 ? '00' :date.getHours()+'';
+                var minutes = date.getMinutes() == 0 ? '00' :date.getMinutes()+'';
 
                 ui_data.ProgressData["RunTime"] = `${hour}:${minutes}`;
             }
         }
         if(!ui_data.ProgressData["RunTime"])
         { // it is running now or already run - need to get the rebuild progress
-            await getRebuildProgressData(papiClient, client, ui_data);
-
+            await getRebuildProgressData(papiClient, client, ui_data,UI_adalRecord);
         }
-
     }
-
     return ui_data;
-
 }
 
 async function getFields(papiClient: PapiClient) { // get the needed fields for the drop downs
@@ -154,49 +150,47 @@ function isInIgnoreList(field:string):boolean{
 }
 
 
-async function getRebuildProgressData(papiClient: PapiClient, client: Client, ui_data: any) {
-
-    var allActivitiesPolling = await papiClient.addons.api.uuid(client.AddonUUID).file("data_index").func("all_activities_polling").post();
-    var allActivitieProgress = {
-        Status: allActivitiesPolling["Status"],
-        Precentag:  Math.round((parseInt(allActivitiesPolling["Current"]) / parseInt(allActivitiesPolling["Count"])) * 100)
-    };
+async function getRebuildProgressData(papiClient: PapiClient, client: Client, ui_data: any, UI_adalRecord:any) 
+{
+    var allActivitiesPolling = {};
+    var transactionLinesPolling = {};
 
     var transactionLinesProgress = {
         Status: "",
         Precentag: 0
     };
 
-    if (allActivitiesPolling["Status"] == "Success") {
-        var transactionLinesPolling = await papiClient.post(`/bulk/data_index/rebuild/polling/transaction_lines`); // get data from papi adal - (it is the most updates and we dont want to overwrite the DI adal rebuild data)
-
-            if(new Date(transactionLinesPolling["StartDateTime"]) > new Date(allActivitiesPolling["StartDateTime"]))
-            {// transaction lines rebuild that run or is running started after all activities finished - poll the transaction lines itself
-                transactionLinesPolling = await papiClient.addons.api.sync().uuid(client.AddonUUID).file("data_index").func("transaction_lines_polling").post();
-            }
-            else
-            { // transaction lines rebuild didnt started yet (full data index rebuild - takes time to the code job of the tl to work) 
-              //or didnt run at all (in case of just all activities rebuild) dont poll- take data from adal.
-              // in case of full rebuild (all activities and then transaction lines) I am puting in adal temp data until the transction lines rebuild begin
-              // so we will not show old transaction lines rebuild resuls - the reason is that in this point (when getting progress data) we cant know 
-              //if it was full ondex rebuild or partial rebuild (only one type rebuild).
-                var tlAdalRecord = await await CommonMethods.getDataIndexTypeAdalRecord(papiClient,client,"transaction_lines");
-                transactionLinesPolling = tlAdalRecord["RebuildData"];
-            }
-
-            transactionLinesProgress = {
-                Status: transactionLinesPolling["Status"],
-                Precentag: Math.round((parseInt(transactionLinesPolling["Current"]) / parseInt(transactionLinesPolling["Count"])) * 100)
-            };
-        
-        ui_data.ProgressData["Status"] = transactionLinesPolling["Status"] != "" ? transactionLinesPolling["Status"] : "InProgress"; //general status for both types together
-        ui_data.ProgressData["Message"] = transactionLinesPolling["Message"];
-
+    if(UI_adalRecord["FullPublish"] == true)
+    {
+        var fullPollingRes = await papiClient.addons.api.uuid(client.AddonUUID).file("data_index").func("full_index_rebuild_polling").post();
+        allActivitiesPolling = fullPollingRes["all_activities"]; 
+        transactionLinesPolling = fullPollingRes["transaction_lines"];
+    }
+    else
+    {
+        allActivitiesPolling = await await papiClient.addons.api.sync().uuid(client.AddonUUID).file("data_index").func("all_activities_polling").post(); 
+        transactionLinesPolling = await papiClient.addons.api.sync().uuid(client.AddonUUID).file("data_index").func("transaction_lines_polling").post();
     }
 
-    else { 
+    var allActivitieProgress = {
+        Status: allActivitiesPolling["Status"],
+        Precentag:  Math.round((parseInt(allActivitiesPolling["Current"]) / parseInt(allActivitiesPolling["Count"])) * 100)
+    };
+    
+    if (allActivitiesPolling["Status"] == "Success") 
+    {
+        transactionLinesProgress = {
+            Status: transactionLinesPolling["Status"],
+            Precentag:  Math.round((parseInt(transactionLinesPolling["Current"]) / parseInt(transactionLinesPolling["Count"])) * 100)
+       };
+
+        ui_data.ProgressData["Status"] = transactionLinesPolling["Status"] != "" ? transactionLinesPolling["Status"] : "InProgress"; //general status for both types together
+        ui_data.ProgressData["Message"] = transactionLinesPolling["Message"] != null ? `transaction_lines rebuild message: ${transactionLinesPolling["Message"]}` : "";
+    }
+    else 
+    { 
         ui_data.ProgressData["Status"] = allActivitiesPolling["Status"]; //general status for both types together
-        ui_data.ProgressData["Message"] = allActivitiesPolling["Message"];
+        ui_data.ProgressData["Message"] = allActivitiesPolling["Message"] != null ? `all_activities rebuild message: ${allActivitiesPolling["Message"]}` : "";
     }
 
     ui_data.ProgressData["all_activities_progress"] = allActivitieProgress;
@@ -263,6 +257,9 @@ export async function publish(client: Client, request: Request) {
     if(UI_adalRecord["RunDateTime"]) // create job to run
     {
         let date: Date = new Date(UI_adalRecord["RunDateTime"]);  
+
+        console.log(`Index rebuild - setting the publish job to run at ${date}`);
+
         var cronExpression = `${date.getMinutes()} ${date.getHours()} ${date.getDate()} ${date.getMonth()} *`;
         var codeJob:CodeJob;
         var codeJobs = await papiClient.codeJobs.find({where:"CodeJobName='DataIndex publish job'", include_deleted:false});
@@ -288,6 +285,7 @@ export async function publish(client: Client, request: Request) {
     }
     else // run now
     {
+
         result.resultObject = await papiClient.addons.api.uuid(client.AddonUUID).async().file("data_index_ui_api").func("publish_job").post()
     }
 
@@ -303,24 +301,29 @@ export async function publish_job(client: Client, request: Request) {
     try
     {
         var adal_ui_data = await CommonMethods.getDataIndexUIAdalRecord(papiClient,client);
-
         var al_needRebuild = await checkIfDataIndexNeedRebuild(papiClient, client, "all_activities",adal_ui_data["all_activities_fields"],result.resultObject);
         var tl_needRebuild = await checkIfDataIndexNeedRebuild(papiClient, client, "transaction_lines",adal_ui_data["transaction_lines_fields"] ,result.resultObject);
 
         // need to start a rebuild according to the cases
+        adal_ui_data["FullPublish"] = false; // for the polling using the UI - we need to know what polling to call
 
         if(al_needRebuild && tl_needRebuild) // both need rebuild - run full_index_rebuild
         {
+            console.log(`Publish job - running full index rebuild`);
             result.resultObject = await papiClient.addons.api.uuid(client.AddonUUID).async().file("data_index").func("full_index_rebuild").post()
+            adal_ui_data["FullPublish"] = true;
         }
         else if(al_needRebuild) // only all_activities need rebuild
         {
+            console.log(`Publish job - only all_activities rebuild`);
             result.resultObject = await papiClient.addons.api.uuid(client.AddonUUID).async().file("data_index").func("all_activities_rebuild").post()
         }
         else if(tl_needRebuild) // only transaction_lines need rebuild
         {
+            console.log(`Publish job - only transaction_lines rebuild`);
             result.resultObject = await papiClient.addons.api.uuid(client.AddonUUID).async().file("data_index").func("transaction_lines_rebuild").post()
         }
+        CommonMethods.saveDataIndexUIAdalRecord(papiClient,client,adal_ui_data);
 
     }        
     catch(e)
@@ -374,12 +377,15 @@ export async function save_ui_data(client: Client, request: Request) { //save th
     var all_activities_fields = CommonMethods.addDefaultFieldsByType(uiData["all_activities_fields"],"all_activities");
     var transaction_lines_fields = CommonMethods.addDefaultFieldsByType(uiData["transaction_lines_fields"],"transaction_lines");
 
-    var ui_adalRecord: AddonData = {
-        Key: "meta_data",
-        all_activities_fields: all_activities_fields.filter(CommonMethods.distinct),
-        transaction_lines_fields: transaction_lines_fields.filter(CommonMethods.distinct),
-        RunDateTime:null
-    };
+    var ui_adalRecord = await CommonMethods.getDataIndexUIAdalRecord(papiClient,client);
+
+    ui_adalRecord["all_activities_fields"] = all_activities_fields.filter(CommonMethods.distinct);
+    ui_adalRecord["transaction_lines_fields"] = transaction_lines_fields.filter(CommonMethods.distinct);
+    ui_adalRecord["RunDateTime"] = null;
+
+    if(ui_adalRecord["FullPublish"] == undefined){
+        ui_adalRecord["FullPublish"]  = false;
+    }
 
     if (uiData["RunTime"]) { // if not set or null - means run now
 
@@ -388,7 +394,9 @@ export async function save_ui_data(client: Client, request: Request) { //save th
         var minutes = parseInt(parts[1]);
 
         let date: Date = new Date();
-        if (hour == 0) // if midnight was chosen
+        console.log(`save_ui_data - now date is: ${Date}, runTime  is: ${uiData["RunTime"]}`);
+
+        if (hour == 0 || date.getHours() > hour) // if midnight was chosen or hour that was passed - run in the next day
         {
             date.setDate(date.getDate() + 1);
         }

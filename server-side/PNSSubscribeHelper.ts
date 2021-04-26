@@ -57,28 +57,28 @@ export class PNSSubscribeHelper{
                 Type: "data",
                 FilterPolicy: {
                         Resource: this.dataIndexType == "all_activities"? ["actvities","transactions"] : [this.dataIndexType],
-                        ActionType:["insert"],
+                        Action:["insert"],
                         AddonUUID:["00000000-0000-0000-0000-00000000c07e"] // to get only nucleus changes
                 },
-                AddonRelativeURL:`${subscribeDetails["Insert"]["AddonPath"]}/${subscribeDetails["Insert"]["FunctionName"]}` 
+                AddonRelativeURL:`/${subscribeDetails["Insert"]["AddonPath"]}/${subscribeDetails["Insert"]["FunctionName"]}` 
             }
 
             await this.papiClient.post(subscribeURL, body, headers);
 
             //subscribe for updates 
-            body.FilterPolicy.ActionType = ["update"];
+            body.FilterPolicy.Action = ["update"];
 
             //updates of Hidden fields
-            body.FilterPolicy["UpdatedFields"] = ["Hidden"];
+            body.FilterPolicy["ModifiedFields"] = ["Hidden"];
             body.Name = `${subscribeDetails["Hidden_Update"]["AddonPath"]}_${subscribeDetails["Hidden_Update"]["FunctionName"]}`;// name=file_functionName
-            body.AddonRelativeURL = `${subscribeDetails["Hidden_Update"]["AddonPath"]}/${subscribeDetails["Hidden_Update"]["FunctionName"]}`
+            body.AddonRelativeURL = `/${subscribeDetails["Hidden_Update"]["AddonPath"]}/${subscribeDetails["Hidden_Update"]["FunctionName"]}`
             
             await this.papiClient.post(subscribeURL, body, headers);
 
             //update of index type data fields
-            body.FilterPolicy["UpdatedFields"] = indexTypeSubscribeData["Fields"];
+            body.FilterPolicy["ModifiedFields"] = indexTypeSubscribeData["Fields"];
             body.Name = `${subscribeDetails["Update"]["AddonPath"]}_${subscribeDetails["Update"]["FunctionName"]}`;// name=file_functionName
-            body.AddonRelativeURL = `${subscribeDetails["Update"]["AddonPath"]}/${subscribeDetails["Update"]["FunctionName"]}`
+            body.AddonRelativeURL = `/${subscribeDetails["Update"]["AddonPath"]}/${subscribeDetails["Update"]["FunctionName"]}`
 
             await this.papiClient.post(subscribeURL, body, headers);
 
@@ -111,11 +111,11 @@ export class PNSSubscribeHelper{
                     Type:"data",
                     FilterPolicy: {
                         Resource: [apiResourceType],
-                        UpdatedFields:fieldsToSubscribe,
-                        ActionType:["update"],
+                        ModifiedFields:fieldsToSubscribe,
+                        Action:["update"],
                         AddonUUID:["00000000-0000-0000-0000-00000000c07e"]// to get only nucleus changes
                     },
-                    AddonRelativeURL:`${subscribeDetails["AddonPath"]}/${subscribeDetails["FunctionName"]}` 
+                    AddonRelativeURL:`/${subscribeDetails["AddonPath"]}/${subscribeDetails["FunctionName"]}` 
                 }
     
                 await this.papiClient.post("/notification/subscriptions", body, headers);
