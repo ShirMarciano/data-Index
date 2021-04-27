@@ -1,4 +1,4 @@
-<div class="addon-page-container">
+<div class="addon-page-container" *ngIf="dataReady">
      <pep-top-bar [title]="'Data_index' | translate">
         <div header-start-content>
         </div>
@@ -8,10 +8,10 @@
                     [sizeType]="'sm'" [styleType]="'weak'" [classNames]="'pep-spacing-element pull-left flip'"
                     (buttonClick)="errorDetailsClick()">
             </pep-button>
-            <pep-menu class="menu pull-left flip pep-spacing-element" 
+            <pep-menu  class="menu pull-left flip pep-spacing-element" 
                 [items]="menuOptions" (menuItemClick)="onMenuItemClicked($event)">
             </pep-menu>
-            <pep-button [disabled] = "disablePublish" [value]="'Data_index_publish' | translate"
+            <pep-button [disabled] = "rebuildInProgress" [value]="'Data_index_publish' | translate"
                 [sizeType]="'md'" [styleType]="'strong'" [classNames]="'pep-spacing-element pull-left flip'"
                 (buttonClick)="publishClicked()">
         </pep-button> 
@@ -43,7 +43,6 @@
                                             <pep-icon name="system_bin"></pep-icon>
                                         </mat-icon>
                                     </button> 
-
                             </div>
                             <pep-button  [disabled]="fields['all_activities'].length == fieldsNumberLimit" [value]="'Data_index_add' | translate" [iconName]="'number_plus'"
                             [sizeType]="'sm'" [styleType]="'strong'" [classNames]="'pull-left flip'"

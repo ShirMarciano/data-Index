@@ -23,19 +23,11 @@ export async function get_ui_data(client: Client, request: Request) {//get the s
 
     if(UI_adalRecord["all_activities_fields"]) // if not exist - it is probably the first time the get was called  
     {
-        if(UI_adalRecord["RunDateTime"])
-        {// if we have run time - we need to check if it is in the future  and if so - the progress indicator should be the time of the run
-            var date = new Date(UI_adalRecord["RunDateTime"]);
-            var nowDate = new Date();
-            if(date > nowDate) // will run in the future -- need to show in the progress indicator
-            {
-                var hour = date.getHours() == 0 ? 24 :date.getHours();
-                var minutes = date.getMinutes() == 0 ? '00' :date.getMinutes()+'';
-
-                ui_data.ProgressData["RunTime"] = `${hour}:${minutes}`;
-            }
+        if(UI_adalRecord["RunTime"])
+        {// if we have run time  - the progress indicator should be the time of the run (the code job should set it to null)
+            ui_data.ProgressData["RunTime"] = UI_adalRecord["RunTime"];
         }
-        if(!ui_data.ProgressData["RunTime"])
+        else
         { // it is running now or already run - need to get the rebuild progress
             await getRebuildProgressData(papiClient, client, ui_data,UI_adalRecord);
         }
@@ -254,45 +246,63 @@ export async function publish(client: Client, request: Request) {
 
     var UI_adalRecord = await save_ui_data(client,request);
 
-    if(UI_adalRecord["RunDateTime"]) // create job to run
+    if(UI_adalRecord["RunTime"]) // create job to run
     {
-        let date: Date = new Date(UI_adalRecord["RunDateTime"]);  
-
-        console.log(`Index rebuild - setting the publish job to run at ${date}`);
-
-        var cronExpression = `${date.getMinutes()} ${date.getHours()} ${date.getDate()} ${date.getMonth()} *`;
-        var codeJob:CodeJob;
-        var codeJobs = await papiClient.codeJobs.find({where:"CodeJobName='DataIndex publish job'", include_deleted:false});
-
-        if(codeJobs && codeJobs.length > 0) // update existing code job cron
-        {
-            codeJob = codeJobs[0];
-            codeJob.CronExpression = cronExpression
-        }
-        else
-        {
-            codeJob = {
-                Type: "AddonJob",
-                CodeJobName: "DataIndex publish job",
-                IsScheduled: true,
-                CronExpression: cronExpression,
-                AddonPath: "data_index_ui_api.js",
-                AddonUUID: client.AddonUUID,
-                FunctionName: "publish_job"
-            };
-        }
-        codeJob = await papiClient.codeJobs.upsert(codeJob);
-
-        console.log(`Index rebuild - setting the publish job to run at ${date}, codeJOB UUID = ${codeJob.UUID}`);
+        await setPublishCodeJob(UI_adalRecord, papiClient, client);
 
     }
     else // run now
     {
-
         result.resultObject = await papiClient.addons.api.uuid(client.AddonUUID).async().file("data_index_ui_api").func("publish_job").post()
     }
 
     return result;
+}
+
+async function setPublishCodeJob(UI_adalRecord: AddonData, papiClient: PapiClient, client: Client) {
+    let date: Date = new Date(UI_adalRecord["RunTime"]);
+
+    var cronExpression = `${date.getMinutes()} ${date.getHours()} ${date.getDate()} ${date.getMonth() + 1} *`;
+
+    var codeJobUUID = UI_adalRecord["PublishCodeJobUUID"];
+    var codeJob;
+
+    if (codeJobUUID) {
+        var codeJobs = await papiClient.codeJobs.get(codeJobUUID);
+        if (codeJobs.length > 0)
+            codeJob = codeJobs[0];
+
+    }
+    console.log(`Index rebuild - setting the publish job to run with cron  ${cronExpression}`);
+
+    if (codeJob) {
+        codeJob = {
+            UUID: codeJobUUID,
+            CodeJobName: "DataIndex publish job",
+            IsScheduled: true,
+            CodeJobIsHidden: false,
+            CronExpression: cronExpression
+        };
+    }
+    else //new code JOB
+    {
+        codeJob = {
+            Type: "AddonJob",
+            CodeJobName: "DataIndex publish job",
+            IsScheduled: true,
+            CronExpression: cronExpression,
+            AddonPath: "data_index_ui_api.js",
+            AddonUUID: client.AddonUUID,
+            FunctionName: "publish_job"
+        };
+    }
+
+    codeJob = await papiClient.codeJobs.upsert(codeJob);
+
+    UI_adalRecord["PublishCodeJobUUID"] = codeJob["UUID"];
+    await CommonMethods.saveDataIndexUIAdalRecord(papiClient, client, UI_adalRecord);
+
+    console.log(`Index rebuild -  publish job was set to run at ${date}, codeJOB UUID = ${codeJob["UUID"]}`);
 }
 
 export async function publish_job(client: Client, request: Request) {
@@ -326,7 +336,18 @@ export async function publish_job(client: Client, request: Request) {
             console.log(`Publish job - only transaction_lines rebuild`);
             result.resultObject = await papiClient.addons.api.uuid(client.AddonUUID).async().file("data_index").func("transaction_lines_rebuild").post()
         }
+
+        adal_ui_data["RunTime"] = null;
+
         CommonMethods.saveDataIndexUIAdalRecord(papiClient,client,adal_ui_data);
+
+        if(client["CodeJobUUID"]) // run in a codeJob
+        {//unscheduled the code job
+
+            console.log(`Publish job - setting the job to isScheduled=false`);
+            papiClient.codeJobs.upsert({IsScheduled:false, UUID:client["CodeJobUUID"],CodeJobName:"DataIndex publish job"});
+
+        }
 
     }        
     catch(e)
@@ -335,10 +356,7 @@ export async function publish_job(client: Client, request: Request) {
         result.erroeMessage = e.message;
     }
 
-    if(client["CodeJobUUID"]) // run in a codeJob
-    {//delete the codeJob
-        await papiClient.codeJobs.delete(client["CodeJobUUID"]);
-    }
+
     
     return result;
 }
@@ -384,7 +402,7 @@ export async function save_ui_data(client: Client, request: Request) { //save th
 
     ui_adalRecord["all_activities_fields"] = all_activities_fields.filter(CommonMethods.distinct);
     ui_adalRecord["transaction_lines_fields"] = transaction_lines_fields.filter(CommonMethods.distinct);
-    ui_adalRecord["RunDateTime"] = null;
+    ui_adalRecord["RunTime"] = null;
 
     if(ui_adalRecord["FullPublish"] == undefined){
         ui_adalRecord["FullPublish"]  = false;
@@ -392,21 +410,9 @@ export async function save_ui_data(client: Client, request: Request) { //save th
 
     if (uiData["RunTime"]) { // if not set or null - means run now
 
-        var parts = uiData["RunTime"].split(':');
-        var hour = parseInt(parts[0]);
-        var minutes = parseInt(parts[1]);
+        console.log(`save_ui_data - now date is: ${new Date()}, runTime  is: ${uiData["RunTime"]}`);
 
-        let date: Date = new Date();
-        console.log(`save_ui_data - now date is: ${Date}, runTime  is: ${uiData["RunTime"]}`);
-
-        if (hour == 0 || date.getHours() > hour) // if midnight was chosen or hour that was passed - run in the next day
-        {
-            date.setDate(date.getDate() + 1);
-        }
-
-        date.setHours(hour);
-        date.setMinutes(minutes);
-        ui_adalRecord.RunDateTime = date.toISOString();
+        ui_adalRecord["RunTime"] = uiData["RunTime"];
     }
 
     return await CommonMethods.saveDataIndexUIAdalRecord(papiClient,client, ui_adalRecord) ;

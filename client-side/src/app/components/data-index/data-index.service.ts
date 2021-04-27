@@ -38,8 +38,8 @@ export class DataIndexService {
 
     ngOnInit(): void {}
 
-    async getUIData(successFunc: Function, errorFunc = null) {
-        return await this.addonService.getAddonApiCall(this.pluginUUID,"data_index_ui_api","get_ui_data").subscribe(res => successFunc(res), err => errorFunc(err));
+    getUIData(successFunc: Function, errorFunc = null) {
+        return this.addonService.getAddonApiCall(this.pluginUUID,"data_index_ui_api","get_ui_data").subscribe(res => successFunc(res), err => errorFunc(err));
     }
 
     publish(uiData:any,successFunc: Function, errorFunc = null)
@@ -57,7 +57,7 @@ export class DataIndexService {
         if(buttonText)
             actionButtons.push( {
                 title: buttonText,
-                className: "",
+                className: "md strong",
                 callback: confirmCallback,
             });
 
@@ -72,7 +72,7 @@ export class DataIndexService {
     }
 
     openPublishDialog(componentOrTemplateRef: any) {
-        return this.dialogService.openDialog(componentOrTemplateRef,);
+        return this.dialogService.openDialog(componentOrTemplateRef);
     }
     
 }

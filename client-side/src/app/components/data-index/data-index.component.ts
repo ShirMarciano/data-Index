@@ -14,7 +14,7 @@ import {
 } from "@angular/core";
 import { TranslateService } from "@ngx-translate/core";
 import { Router, ActivatedRoute } from "@angular/router";
-import { PepLayoutService, PepScreenSizeType } from '@pepperi-addons/ngx-lib';
+import { PepLayoutService, PepLoaderService, PepScreenSizeType } from '@pepperi-addons/ngx-lib';
 import { DataIndexService } from './data-index.service';
 import { identifierModuleUrl } from "@angular/compiler";
 
@@ -32,11 +32,12 @@ import { FormArray, FormBuilder, FormGroup } from "@angular/forms";
   providers: [DataIndexService]
 })
 export class DataIndexComponent implements OnInit {
+    dataReady:boolean = false;
     screenSize: PepScreenSizeType;
     defaultFields: any;
     typesFields: any;
     uiData:any;
-    disablePublish:boolean;
+    rebuildInProgress:boolean;
     progressIndicator:string;
     indexingFaild:boolean = false;
     indexingError:string;
@@ -64,8 +65,10 @@ export class DataIndexComponent implements OnInit {
         public router: Router,
         public compiler: Compiler,
         public layoutService: PepLayoutService,
+        public loaderService: PepLoaderService
+        ) 
 
-    ) {
+     {
 
         // Parameters sent from url
         this.dataIndexService.pluginUUID = this.routeParams.snapshot.params['addon_uuid'];
@@ -76,34 +79,39 @@ export class DataIndexComponent implements OnInit {
         this.layoutService.onResize$.subscribe(size => {
             this.screenSize = size;
         });
-    
+
     }
     
   ngOnInit(): void {
+
     this.getUIData();
+
   }
 
     private getUIData() {
 
-        this.uiData = this.dataIndexService.getUIData((result: any) => {
+       this.dataIndexService.getUIData((uiData: any) => {
 
-            this.uiData = result;
+            this.uiData = uiData;
 
-            var fields = this.uiData['Fields']; // //the fields for the dropdowns and the defaultFields
+            var fields = uiData['Fields']; // //the fields for the dropdowns and the defaultFields
             this.defaultFields = fields['DataIndexTypeDefaultFields'];
             this.typesFields = fields['TypesFields'];
 
-            var progressStatus = this.uiData['ProgressData']['Status'];
+            var progressStatus = uiData['ProgressData']['Status'];
 
-            this.disablePublish = progressStatus == 'InProgress';
+            this.rebuildInProgress = progressStatus == 'InProgress';
 
-            this.setProgressIndicator(this.uiData['ProgressData']);
+            this.setProgressIndicator(uiData['ProgressData']);
 
-            this.menuOptions = [{ key: 'delete_index', text: this.translate.instant('Data_index_delete_index') }];
+            this.menuOptions = [{ key: 'delete_index', text: this.translate.instant('Data_index_delete_index') ,disabled:this.rebuildInProgress}];
 
             this.SetAllActivitiesTabData();
 
             this.SetTransactionLinesUIData();
+
+            this.dataReady = true;
+
 
         });
     }
@@ -224,11 +232,15 @@ export class DataIndexComponent implements OnInit {
         var progressStatus = progressData["Status"]
         this.progressIndicator = "";
         if (progressData["RunTime"]) {
-            this.progressIndicator = `${this.translate.instant('Data_index_processScheduledToRunAt')}: ${progressData["RunTime"]}`;
+            let date = new Date (progressData["RunTime"]);
+            var h = date.getHours();
+            var m = date.getMinutes();
+            this.progressIndicator = `${this.translate.instant('Data_index_publishJob_scheduled_to')} ${h < 10 ? '0'+ h : h}:${m < 10 ? '0'+ m : m}`;
         }
         else if (progressStatus) {
 
-            if (progressStatus == "Failure") {
+            if (progressStatus == "Failure") 
+            {
                 this.progressIndicator = this.translate.instant('Data_index_failedToPublish');
                 this.indexingFaild = true;
                 this.indexingError = progressData["Message"];
@@ -303,11 +315,7 @@ export class DataIndexComponent implements OnInit {
                                     this.translate.instant("Data_index_delete_index"),
                                     message,
                                     this.translate.instant("Data_index_OK"),
-                                    () =>{ 
-                                        //refresh the UI
-                                            this.cleanUIData();
-                                            this.getUIData();
-                                        }, 
+                                    () =>{}, 
                                     false
                                     );
                             }
@@ -379,7 +387,19 @@ export class DataIndexComponent implements OnInit {
             {
                 if(dialogResult.runType == "2"){ // type 2 is 'run at' option of the publish
                     //add run time to saved object
-                    data.RunTime = dialogResult.runTime;
+                    var parts = dialogResult.runTime.split(':');
+                    var hour = parseInt(parts[0]);
+                    var minutes = parseInt(parts[1]);
+                    let date: Date = new Date();
+    
+                    if (hour == 0 || date.getHours() > hour) // if midnight was chosen or hour that was passed - run in the next day
+                    {
+                        date.setDate(date.getDate() + 1);
+                    }
+                    date.setHours(hour);
+                    date.setMinutes(minutes);
+
+                    data.RunTime = date.toISOString();
                 }
     
                 this.dataIndexService.publish(data,(result)=>{
@@ -396,8 +416,9 @@ export class DataIndexComponent implements OnInit {
     }
 
     private cleanUIData() {
+        this.dataReady = false;
         this.uiData = "";
-        this.disablePublish = false;
+        this.rebuildInProgress = false;
         this.progressIndicator = "";
         this.indexingFaild = false;
         this.indexingError = "";

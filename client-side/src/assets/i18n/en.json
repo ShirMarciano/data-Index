@@ -21,7 +21,6 @@
     "Data_index_remove": "Remove",
     "Data_index_failedToPublish":"Failed to publish the data",
     "Data_index_failure_details":"Failure details",
-    "Data_index_processScheduledToRunAt:":"The process is scheduled to run at:",
     "Data_index_object_type_all_activities": "Activity/Transaction",
     "Data_index_object_type_Account": "Account",
     "Data_index_object_type_Item": "Item",
@@ -30,5 +29,7 @@
     "Data_index_object_type_Agent": "Sales Rep",
     "Data_index_Confirm": "Confirm",
     "Data_index_Cancel":"Cancel",
-    "Data_index_OK":"OK"
+    "Data_index_OK":"OK",
+    "Data_index_publishJob_scheduled_to":"The process is scheduled to run at:"
+
 }

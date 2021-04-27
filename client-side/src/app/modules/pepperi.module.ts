@@ -138,11 +138,11 @@ export function createTranslateLoader(http: HttpClient, fileService: PepFileServ
     const translationsSuffix: string = fileService.getAssetsTranslationsSuffix();
 
     return new MultiTranslateHttpLoader(http, [
-        {
-            prefix:
-                addonStaticFolder.length > 0
-                    ? addonStaticFolder.indexOf('localhost') >= 0 ? addonStaticFolder + translationsPath : addonStaticFolder
-                    : translationsPath,
+         { 
+             prefix:
+                 addonStaticFolder.length > 0
+                 ? addonStaticFolder.indexOf('localhost') >= 0 ? addonStaticFolder + translationsPath : addonStaticFolder
+                     : translationsPath,
             suffix: translationsSuffix,
         },
         {
