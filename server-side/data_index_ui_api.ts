@@ -253,6 +253,16 @@ export async function publish(client: Client, request: Request) {
     }
     else // run now
     {
+        var codeJobUUID = UI_adalRecord["PublishCodeJobUUID"];
+        if(codeJobUUID) // unscheduled the code job for just in case so it will not run twice - in case that the user chose  first run at and then presse run now.
+        {
+            var codeJob = await papiClient.codeJobs.upsert({
+                UUID: codeJobUUID,
+                CodeJobName: "DataIndex publish job",
+                IsScheduled: false
+            });
+        }
+        
         result.resultObject = await papiClient.addons.api.uuid(client.AddonUUID).async().file("data_index_ui_api").func("publish_job").post()
     }
 

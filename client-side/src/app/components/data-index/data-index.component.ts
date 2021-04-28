@@ -106,9 +106,10 @@ export class DataIndexComponent implements OnInit {
 
             this.menuOptions = [{ key: 'delete_index', text: this.translate.instant('Data_index_delete_index') ,disabled:this.rebuildInProgress}];
 
+            this.SetTransactionLinesUIData(); 
+
             this.SetAllActivitiesTabData();
 
-            this.SetTransactionLinesUIData();
 
             this.dataReady = true;
 
@@ -126,14 +127,11 @@ export class DataIndexComponent implements OnInit {
 
         ];
 
-        this.transaction_lines_apiNames = {
-            "transaction_lines": this.typesFields["transaction_lines"],
-            "Item": this.typesFields["Item"],
-            "Transaction": [],
-            "Transaction.Account": this.typesFields["Account"],
-            "Transaction.Agent": this.typesFields["Agent"]
-
-        };
+        this.transaction_lines_apiNames["transaction_lines"]= this.typesFields["transaction_lines"];
+        this.transaction_lines_apiNames["Item"] = this.typesFields["Item"];
+        this.transaction_lines_apiNames["Transaction"] = this.transaction_lines_apiNames["Transaction"] ? this.transaction_lines_apiNames["Transaction"] : [];
+        this.transaction_lines_apiNames["Transaction.Account"] = this.typesFields["Account"];
+        this.transaction_lines_apiNames["Transaction.Agent"] = this.typesFields["Agent"];
 
         this.setTabFields("transaction_lines");
     }
@@ -186,22 +184,25 @@ export class DataIndexComponent implements OnInit {
                 {
                     this.fields[indexType].push({ type: prefix, apiName: apiName, default: defaultField });
                 }
-
-                this.handleSpecialCases(indexType, prefix, fieldObj); 
             }
         }
         else {
+            var fieldObj =  this.getFieldFromFieldsType(indexType, field);
 
-            if (this.getFieldFromFieldsType(indexType, field)) // can be not defined or enpty array if invalid api name somehow was entered to adal record -will not be shown and new publish will remove it
+            if (fieldObj) // can be not defined or enpty array if invalid api name somehow was entered to adal record -will not be shown and new publish will remove it
             {
                 this.fields[indexType].push({ type: indexType, apiName: field, default: defaultField });
+                this.handleSpecialCases(indexType, fieldObj); 
+
             }
 
         }
     }
 
-    private handleSpecialCases(indexType: string, prefix: string, fieldObj: any) {
-        if (indexType == "transaction_lines" && prefix == 'Transaction') {
+    private handleSpecialCases(indexType:string, fieldObj: any) {
+        if (indexType == "all_activities") {                 // need to put the saved fields of transaction in the apiNames  options on transaction_lines tab
+            if(!this.transaction_lines_apiNames["Transaction"])
+                this.transaction_lines_apiNames["Transaction"] = [];
             this.transaction_lines_apiNames["Transaction"].push(fieldObj);
         }
     }
@@ -403,9 +404,7 @@ export class DataIndexComponent implements OnInit {
                 }
     
                 this.dataIndexService.publish(data,(result)=>{
-                    //refresh the UI
-                    this.cleanUIData();
-                    this.getUIData();
+                    this.refreshProgressIndicator();
                 })
             }
             
@@ -415,27 +414,22 @@ export class DataIndexComponent implements OnInit {
 
     }
 
-    private cleanUIData() {
-        this.dataReady = false;
-        this.uiData = "";
-        this.rebuildInProgress = false;
-        this.progressIndicator = "";
-        this.indexingFaild = false;
-        this.indexingError = "";
+    private refreshProgressIndicator() {
 
-        this.all_activities_types = [];
-        this.transaction_lines_types = [];
+        this.dataIndexService.getUIData((uiData: any) => {
 
+            this.uiData = uiData;
 
-        this.all_activities_apiNames = {};
-        this.transaction_lines_apiNames = {};
+            var progressStatus = uiData['ProgressData']['Status'];
 
-        this.menuOptions = [];
+            this.rebuildInProgress = progressStatus == 'InProgress';
 
-        this.fields = {
-            "all_activities": [],
-            "transaction_lines": []
-        };
+            this.setProgressIndicator(uiData['ProgressData']);
+
+            this.menuOptions = [{ key: 'delete_index', text: this.translate.instant('Data_index_delete_index') ,disabled:this.rebuildInProgress}];
+
+        });
+       
     }
 
     private getIndexTypeFieldsToExport(indexType: string) {
