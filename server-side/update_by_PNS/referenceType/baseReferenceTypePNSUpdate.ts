@@ -131,7 +131,9 @@ export class baseReferenceTypePNSUpdate extends BasePNSAction {
                     }
                 }
             };
-            await this.papiClient.post(`/elasticsearch/update/${this.dataIndexType}`, queryBody);
+            var res = await this.papiClient.post(`/elasticsearch/update/${this.dataIndexType}`, queryBody);
+            console.log(`Prefix: ${prefix} - Update by query body ${JSON.stringify(queryBody)}`);
+            console.log(`Prefix: ${prefix} - Update by query result ${JSON.stringify(res)}`);
         }
     }
 
