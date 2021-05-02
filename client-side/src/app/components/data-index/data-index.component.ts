@@ -110,11 +110,19 @@ export class DataIndexComponent implements OnInit {
 
             this.SetAllActivitiesTabData();
 
-
             this.dataReady = true;
 
+            if(this.progressIndicator != "" && !this.indexingFaild)
+                this.setInterval();
 
         });
+
+    }
+
+    private setInterval() {
+        var id = setInterval(() => {
+            this.refreshProgressIndicator();
+        }, 10000); // 10 secs is the best time to refresh - no less
     }
 
     private SetTransactionLinesUIData() {
@@ -230,8 +238,8 @@ export class DataIndexComponent implements OnInit {
     }
 
     private setProgressIndicator(progressData: any) {
-        var progressStatus = progressData["Status"]
-        this.progressIndicator = "";
+        var progressStatus = progressData["Status"];
+
         if (progressData["RunTime"]) {
             let date = new Date (progressData["RunTime"]);
             var h = date.getHours();
@@ -245,11 +253,12 @@ export class DataIndexComponent implements OnInit {
                 this.progressIndicator = this.translate.instant('Data_index_failedToPublish');
                 this.indexingFaild = true;
                 this.indexingError = progressData["Message"];
+                
             }
             else
             {
                 var alProgressData = progressData["all_activities_progress"];
-                if(alProgressData["Status"] == "InProgress") //DI-18047 -  When exporting the Activities/Transactions, then the progress will show only the Transaction percentage. (it will not show '0% of Lines')
+                if(alProgressData["Status"] == "" || alProgressData["Status"] == "InProgress") //DI-18047 -  When exporting the Activities/Transactions, then the progress will show only the Transaction percentage. (it will not show '0% of Lines')
                 {
                     var alPrecentage = progressData["all_activities_progress"]["Precentag"];
                     alPrecentage = alPrecentage != "" && alPrecentage != null? alPrecentage : 0;
@@ -266,9 +275,27 @@ export class DataIndexComponent implements OnInit {
                         tlPrecentage = tlPrecentage != "" && tlPrecentage != null  ? tlPrecentage : 0;
                         this.progressIndicator =  `${ this.translate.instant('Data_index_processing_transaction_lines')} (${tlPrecentage}% ${this.translate.instant('Data_index_completed')})`;
                     }
+                    else
+                    {
+                        this.clearProgressIndicator();
+                    }
+                }
+                else // Publish was finished
+                {
+                    this.clearProgressIndicator(); 
                 }
             }
         }
+    }
+
+    private clearProgressIndicator() {
+
+        if(this.progressIndicator != ""){
+            this.indexingFaild = false;
+            this.indexingError = "";
+            this.progressIndicator = "";
+        }
+
     }
 
     private getDistinctFieldsObj(fields:{key:string,value:string}[])
@@ -316,7 +343,7 @@ export class DataIndexComponent implements OnInit {
                                     this.translate.instant("Data_index_delete_index"),
                                     message,
                                     this.translate.instant("Data_index_OK"),
-                                    () =>{}, 
+                                    () =>{this.clearProgressIndicator();}, 
                                     false
                                     );
                             }
@@ -404,7 +431,8 @@ export class DataIndexComponent implements OnInit {
                 }
     
                 this.dataIndexService.publish(data,(result)=>{
-                    this.refreshProgressIndicator();
+                    this.progressIndicator = this.translate.instant('Data_index_initializing_publish');
+                    this.setInterval();
                 })
             }
             

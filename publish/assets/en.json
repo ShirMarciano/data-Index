@@ -14,6 +14,7 @@
     "Data_index_processing_all_activities": "Processing activities & transactions",
     "Data_index_processing_transaction_lines": "Processing transaction lines",
     "Data_index_completed": "completed",
+    "Data_index_initializing_publish": "Initializing the publish data...",
     "Data_index_fields": "Fields",
     "Data_index_chooseFieldDescription": "Define the fields which be indexed",
     "Data_index": "Data Index",
@@ -31,4 +32,5 @@
     "Data_index_Cancel":"Cancel",
     "Data_index_OK":"OK",
     "Data_index_publishJob_scheduled_to":"The process is scheduled to run at:"
+
 }
