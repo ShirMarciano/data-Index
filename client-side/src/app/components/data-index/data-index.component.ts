@@ -431,9 +431,7 @@ export class DataIndexComponent implements OnInit {
             {
                 this.rebuildInProgress = false;
             }
-            
         });
-
 
     }
 
